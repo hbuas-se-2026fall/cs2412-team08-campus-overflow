@@ -26,13 +26,15 @@
 
 | 姓名 | GitHub | 角色 | 承担任务点 | 主要职责 |
 | --- | --- | --- | --- | --- |
-| 邹园园 | `@zouyuanyuan27` | **PO**（Product Owner） | 21 | 需求建模、Backlog 优先级与验收标准、Sprint Review 决策 |
-| 李增艳 | 待补记 | **SM**（Scrum Master，建议，可轮换） | 22 | 协作流程、看板维护、CI 状态、合并节奏、回顾会议 |
-| 秦悦 | 待补记 | Developer | 21 | 前端路由与组件、后端模块、监控；Lab 6/7 轮值 QA |
-| 张嘉雨 | `@ember216` | Developer | 22 | 聚合代码实现、测试补强、容器编排；Lab 6/7 轮值 QA |
-| 王钰滢 | `@wtr999-jpg`（待本人确认） | Developer | 21 | 需求细化、开发与文档产出；Lab 6/7 轮值 QA |
+| 邹园园 | [`@zouyuanyuan27`](https://github.com/zouyuanyuan27) | **PO**（Product Owner） | 21 | 需求建模、Backlog 优先级与验收标准、Sprint Review 决策 |
+| 李增艳 | [`@LZY901-art`](https://github.com/LZY901-art) | **SM**（Scrum Master，建议，可轮换） | 22 | 协作流程、看板维护、CI 状态、合并节奏、回顾会议 |
+| 秦悦 | [`@QY2026932`](https://github.com/QY2026932) | Developer | 21 | 前端路由与组件、后端模块、监控；Lab 6/7 轮值 QA |
+| 张嘉雨 | [`@ember216`](https://github.com/ember216) | Developer | 22 | 聚合代码实现、测试补强、容器编排；Lab 6/7 轮值 QA |
+| 王钰滢 | [`@wtr999-jpg`](https://github.com/wtr999-jpg) | Developer | 21 | 需求细化、开发与文档产出；Lab 6/7 轮值 QA |
 
 > **姓名写法说明**：《分工表》中记作「王玉莹」，本人提交的自我介绍 `docs/team/hello-wangyuying.md` 署名为「王钰滢」。本文件**以本人签名为准**，已提请组长在下版《分工表》中统一。
+>
+> **与实验手册的对应（Lab 1 Step 1）**：手册要求「4–6 人一队，配置 1 名 PO、1 名 SM、3–4 名 Developer（其中 1 名兼 QA）」，且「角色每个 Sprint 末尾可投票轮换」。本队 5 人 = 1 PO + 1 SM + 3 Developer，QA 由三名 Developer 在 Lab 6/7 轮值，符合手册的组织形式。
 >
 > **任务点分布**：全周期实验步骤小点共 111 项，其中全员协作项 4 项，可分配 107 项；邹园园、秦悦、王钰滢各 21 项，李增艳、张嘉雨各 22 项。差额 1 项仅因 107 不能被 5 整除，多 1 项者平均难度略低，总工作量对等。
 
@@ -90,8 +92,8 @@
 
 ## 五、待办与已知差异
 
-- [ ] 补齐李增艳、秦悦的 GitHub 用户名（请本人在群里回复或直接在各自 `hello-*.md` 中补写）
-- [ ] 确认王钰滢的 GitHub 用户名是否为 `@wtr999-jpg`
+- [x] 补齐全员 GitHub 用户名（2026-10-27 依据组长提供的 GitHub 主页截图确认：李增艳 `@LZY901-art`、秦悦 `@QY2026932`、王钰滢 `@wtr999-jpg`）
+- [x] 确认王钰滢的 GitHub 用户名 `@wtr999-jpg`
 - [ ] 统一「王钰滢 / 王玉莹」姓名写法（提请在下版《分工表》订正）
 - [ ] 同步修订《团队章程 v1.0》§0：团队规模 **4 人 → 5 人**、角色分工表补全姓名与 GitHub（属 L1-13 范围，已通知负责人秦悦）
 - [ ] 全员在本文件对应 PR 中留下 Approve，作为"名单已公布"的书面凭证
