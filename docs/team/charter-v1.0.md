@@ -12,7 +12,7 @@
 | ----- | ------------------------------------------------ |
 | 团队名称  | 第 5 组 · CampusOverflow                           |
 | 课程与学期 | 软件工程（2026 秋）                                     |
-| 代码仓库  | `github.com/zouyuanyuan27/campus-overflow-team5` |
+| 代码仓库  | `github.com/hbuas-se-2026fall/cs2412-team08-campus-overflow` |
 | 项目周期  | Sprint 0–4（第 2–15 周）                             |
 | 主线任务  | 在既有骨架上完成 Q&A / Reputation / Discovery 三个限界上下文的实现 |
 
