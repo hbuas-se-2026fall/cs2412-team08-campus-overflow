@@ -17,6 +17,7 @@ import com.campusoverflow.shared.event.EventIds;
 import com.campusoverflow.shared.event.IntegrationEventPublisher;
 import com.campusoverflow.shared.security.Actor;
 import java.time.Clock;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,8 +47,15 @@ public class AnswerCommandService {
 
     @Transactional
     public long submit(Actor actor, long questionId, String body) {
-        // TODO(S2)：实现 AnswerCommandService.submit——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：AnswerCommandService.submit 尚未实现");
+        Objects.requireNonNull(actor, "actor");
+        Question question = loadQuestion(questionId);
+        Answer answer = Answer.submit(question, actor.userId(), MarkdownBody.ofAnswer(body), clock.instant());
+        Answer saved = answers.save(answer);
+        questions.adjustAnswerCount(questionId, 1);
+        listCache.invalidateAll();
+        events.publish(new AnswerSubmittedEvent(EventIds.next(), clock.instant(), saved.id(), questionId,
+                saved.authorId(), question.authorId(), question.title().value()));
+        return saved.id();
     }
 
     @Transactional
@@ -76,8 +84,7 @@ public class AnswerCommandService {
     }
 
     private Question loadQuestion(long id) {
-        // TODO(S2)：实现 AnswerCommandService.loadQuestion——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：AnswerCommandService.loadQuestion 尚未实现");
+        return questions.findById(id).orElseThrow(() -> new NotFoundException("QA-4001", "问题不存在或已被删除"));
     }
 
     private Answer loadAnswer(long id) {

@@ -20,6 +20,7 @@ import com.campusoverflow.shared.security.Actor;
 import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,8 +55,18 @@ public class QuestionCommandService {
 
     @Transactional
     public long post(Actor actor, PostQuestionCommand cmd) {
-        // TODO(S2)：实现 QuestionCommandService.post——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：QuestionCommandService.post 尚未实现");
+        Objects.requireNonNull(actor, "actor");
+        Objects.requireNonNull(cmd, "cmd");
+        Tags tagSet = Tags.of(cmd.tags());
+        Question question = Question.post(actor.userId(), cmd.courseId(), new Title(cmd.title()),
+                MarkdownBody.ofQuestion(cmd.body()), tagSet, clock.instant());
+        Question saved = questions.save(question);
+        tags.adjustUsage(tagSet.names(), 1);
+        listCache.invalidateAll();
+        audit.record("QUESTION_POSTED", actor.userId(), "QUESTION", String.valueOf(saved.id()), null);
+        events.publish(new QuestionPostedEvent(EventIds.next(), clock.instant(), saved.id(), saved.authorId(),
+                saved.courseId(), saved.title().value(), plainText(saved.body().value()), tagSet.names()));
+        return saved.id();
     }
 
     @Transactional
@@ -68,6 +79,10 @@ public class QuestionCommandService {
     public void delete(Actor actor, long questionId) {
         // TODO(S2)：实现 QuestionCommandService.delete——参考领域单元测试与 arc42 文档中的业务规则
         throw new UnsupportedOperationException("TODO(S2)：QuestionCommandService.delete 尚未实现");
+    }
+
+    private String plainText(String markdown) {
+        return renderer.toPlainText(markdown, PLAIN_TEXT_FOR_INDEX);
     }
 
     private Question load(long questionId) {
