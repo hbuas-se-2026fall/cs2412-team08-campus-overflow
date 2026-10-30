@@ -54,8 +54,11 @@ public class Question {
     }
 
     public static Question post(long authorId, Long courseId, Title title, MarkdownBody body, Tags tags, Instant now) {
-        // TODO(S2)：实现 Question.post——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：Question.post 尚未实现");
+        Objects.requireNonNull(title, "title");
+        Objects.requireNonNull(body, "body");
+        Objects.requireNonNull(tags, "tags");
+        Instant created = Objects.requireNonNull(now, "now");
+        return new Question(null, authorId, courseId, title, body, tags, null, 0, 0, 0, created, created, null, 0);
     }
 
     public static Question reconstitute(Long id, long authorId, Long courseId, Title title, MarkdownBody body,
