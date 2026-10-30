@@ -39,8 +39,15 @@ public class Answer {
     }
 
     public static Answer submit(Question question, long authorId, MarkdownBody body, Instant now) {
-        // TODO(S2)：实现 Answer.submit——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：Answer.submit 尚未实现");
+        Objects.requireNonNull(question, "question");
+        Objects.requireNonNull(body, "body");
+        question.ensureOpenForAnswers();
+        Long qid = question.id();
+        if (qid == null) {
+            throw new BusinessRuleException("QA-1009", "问题尚未持久化，不能被回答");
+        }
+        Instant created = Objects.requireNonNull(now, "now");
+        return new Answer(null, qid, authorId, body, 0, null, created, created, null, 0);
     }
 
     public static Answer reconstitute(Long id, long questionId, long authorId, MarkdownBody body, int score,

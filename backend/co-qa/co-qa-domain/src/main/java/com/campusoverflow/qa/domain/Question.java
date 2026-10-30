@@ -86,8 +86,9 @@ public class Question {
     }
 
     public void ensureOpenForAnswers() {
-        // TODO(S2)：实现 Question.ensureOpenForAnswers——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：Question.ensureOpenForAnswers 尚未实现");
+        if (isDeleted()) {
+            throw new BusinessRuleException("QA-1008", "问题已删除，不能再被回答");
+        }
     }
 
     private void ensureNotDeleted() {
