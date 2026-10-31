@@ -1,28 +1,26 @@
-# CampusOverflow 前端需求与页面验收标准（Lab5 · 邹园园 PO）
+# CampusOverflow 前端需求与页面验收标准
 
-> 负责人：邹园园（@zouyuanyuan27）｜实验 Lab5：前端工程骨架与对接（Sprint 2）
-> 依据：实验详案 Lab5 提交物、实验指导书 V3 第 5.4 节 Product Backlog（PB-06/07/08/19）与 6.3.5 节验收标准格式
 > 用途：定义前端页面交互需求与可验证的验收标准（Given/When/Then），供开发（张嘉雨、王钰滢）实现与联调后按此验收
 
 ---
 
 ## 1. 概述
 
-### 1.1 实验目标（详案 Lab5）
+### 1.1 实验目标
 
 1. 搭建 React 18 + TypeScript 5 + Vite 工程，启用严格类型模式（strict + noUncheckedIndexedAccess）；
 2. 配置 ESLint + Prettier + Husky pre-commit 钩子；
 3. 完成路由、状态管理、API 客户端、组件库（Ant Design 5）的基础设施搭建；
 4. 完成与后端的首个端到端贯通：**在前端发起提问并显示**。
 
-### 1.2 提交物（详案 Lab5）
+### 1.2 提交物
 
 1. 前端工程 `pnpm dev` 可启动，首页可访问；
 2. `pnpm lint` 与 `pnpm typecheck` 全绿；
 3. pre-commit 钩子可拦截不合规提交；
 4. 提问 → 列表显示 → 详情查看 端到端跑通，录屏 30 秒以内。
 
-### 1.3 本页面对应的用户故事（指导书 5.4）
+### 1.3 本页面对应的用户故事
 
 | PBI | 用户故事 | 优先级 |
 | --- | --- | --- |
@@ -105,7 +103,7 @@
 
 ## 4. 验收标准（Given / When / Then）
 
-### 4.1 工程验收（详案提交物 1–3）
+### 4.1 工程验收
 
 | # | Given | When | Then |
 | --- | --- | --- | --- |
@@ -115,7 +113,7 @@
 | E4 | 已配置 Husky + lint-staged | 提交一个含 `console.log`/格式不合规的文件 | pre-commit 钩子拦截提交，给出 ESLint/Prettier 提示 |
 | E5 | 已配置 Vite path alias | 源码中使用 `@/` 导入 | `pnpm dev` 与 `pnpm build` 均可正常解析 |
 
-### 4.2 功能验收（端到端：提问 → 列表 → 详情，详案提交物 4）
+### 4.2 功能验收（端到端：提问 → 列表 → 详情）
 
 | # | Given | When | Then |
 | --- | --- | --- | --- |
