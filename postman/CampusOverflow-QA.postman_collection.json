@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "CampusOverflow Q&A（Lab 4 端到端接口验证）",
+    "description": "CampusOverflow 后端接口冒烟集合。当前包含 Lab 4 的验收用例：POST /api/v1/questions（发布问题）。\n\n使用前准备：\n1. 启动中间件与后端：docker compose -f deploy/docker-compose.yml up -d mysql redis && mvn spring-boot:run -pl co-bootstrap -Dspring-boot.run.profiles=dev\n2. 登录获取会话：先在浏览器或 Postman 中完成 注册→登录（或使用已登录会话），把 SESSION Cookie 值填入变量 session，把 GET /api/v1/auth/csrf 返回的 XSRF-TOKEN 填入变量 xsrfToken。\n3. 若问题中的 courseId 尚未加入课程，可去掉该字段后再发送。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "发布问题（成功用例）",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('返回 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test('响应体包含新问题 id', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.id).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-XSRF-TOKEN",
+            "value": "{{xsrfToken}}"
+          },
+          {
+            "key": "Cookie",
+            "value": "SESSION={{session}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"courseId\": 100,\n  \"title\": \"红黑树插入后如何判断旋转方向？\",\n  \"body\": \"插入节点后出现连续红色节点，什么时候左旋、什么时候右旋？\",\n  \"tags\": [\"数据结构\", \"红黑树\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "questions"]
+        },
+        "description": "Lab 4 验收用例：发布问题成功后返回 201 与新问题 id。标题 10–150 字符、正文 20–30000 字符、1–5 个标签。"
+      }
+    },
+    {
+      "name": "问题列表（验证发布结果）",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/questions?page=1&size=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "questions"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "size", "value": "20" }
+          ]
+        },
+        "description": "列表页第一条应为刚发布的问题（最新优先）。"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "session",
+      "value": ""
+    },
+    {
+      "key": "xsrfToken",
+      "value": ""
+    }
+  ]
+}
