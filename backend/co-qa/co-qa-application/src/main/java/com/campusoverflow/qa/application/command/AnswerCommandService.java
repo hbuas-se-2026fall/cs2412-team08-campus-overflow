@@ -44,11 +44,31 @@ public class AnswerCommandService {
         this.clock = clock;
     }
 
-    @Transactional
+  /*  @Transactional
     public long submit(Actor actor, long questionId, String body) {
         // TODO(S2)：实现 AnswerCommandService.submit——参考领域单元测试与 arc42 文档中的业务规则
         throw new UnsupportedOperationException("TODO(S2)：AnswerCommandService.submit 尚未实现");
+    }  */
+  @Transactional
+  public long submit(Actor actor, long questionId, String body) {
+      Question question = load(questionId);                                 // ① 查问题，不存在/已删除就抛错
+      MarkdownBody markdown = MarkdownBody.ofAnswer(body);                  // ② 校验并转成 MarkdownBody
+      Answer answer = Answer.submit(question, actor.userId(), markdown, clock.instant());  // ③ 领域创建（内部校验问题可回答）
+      Answer saved = answers.save(answer);                                  // ④ 保存，拿 id
+      questions.adjustAnswerCount(questionId, 1);                           // ⑤ 回答数 +1
+      events.publish(new AnswerSubmittedEvent(EventIds.next(), clock.instant(), saved.id(), questionId,
+              actor.userId(), question.authorId(), question.title().value()));  // ⑥ 发事件
+      listCache.invalidateAll();                                            // ⑦ 缓存失效
+      audit.record("ANSWER_SUBMITTED", actor.userId(), "ANSWER", String.valueOf(saved.id()), null);  // ⑧ 审计
+      return saved.id();                                                    // ⑨ 返回 id
+  }
+
+    private Question load(long questionId) {
+        return questions.findById(questionId)
+                .filter(q -> !q.isDeleted())
+                .orElseThrow(() -> new NotFoundException("QA-4001", "问题不存在或已删除"));
     }
+
 
     @Transactional
     public void edit(Actor actor, long answerId, String body) {
