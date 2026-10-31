@@ -63,14 +63,14 @@
 | --- | --- | --- | --- | --- | --- |
 | `co-identity` | 支撑子域 | 学生、管理员、教职工 | Register、VerifyStudent、CreateStaffAccount、DisableAccount | UserRegistered●、StudentVerified、StaffAccountCreated、AccountDisabled | User（聚合根）、CourseMember（实体） |
 | `co-reputation` | 核心域 | 系统·事件中继、定时任务、管理员 | OpenAccount、ApplyReputation、AwardBadge、OpenBounty、CloseBounty、RefreshLeaderboard | ReputationAccountOpened、ReputationChanged●、BountyOpened●、BountyAwarded●、BadgeAwarded●、BountyClosed●、LeaderboardUpdated | ReputationAccount（聚合根·乐观锁）、Bounty（聚合根·状态机）、LedgerEntry（值对象·只追加）、ReputationRulebook（领域策略） |
-| `co-discovery` | 通用 / 支撑子域 | 搜索用户、系统·中继、被 @ 用户 | ReindexQuestion、SearchQuestions、MarkNotificationRead | QuestionIndexed、RelatedQuestionsRecalculated、MentionNotified、NotificationCreated | SearchDocument（值对象·写模型）、Notification（聚合根）、SearchQuery（值对象·已清洗） |
+| `co-discovery` | 通用 / 支撑子域 | 搜索用户、系统·中继、被 @ 用户 | ReindexQuestion、SearchQuestions、MarkNotificationRead | QuestionIndexed、RelatedQuestionsRecalculated、MentionNotified、NotificationCreated | SearchDocument（只读投影·读模型）、Notification（聚合根）、SearchQuery（值对象·已清洗） |
 
 ### 第 5 层：底部四块
 
 - **绿的读模型**：问题列表缓存（Q&A）、搜索结果投影（Discovery）、排行榜 ZSET（Reputation）、通知中心列表（Discovery）。注意它们分别挂在**哪个上下文**下面——读模型不是全局共享的。
 - **粉的外部系统**：校园统一身份认证（OAuth）、邮件服务（SMTP）、Redis、MySQL FULLTEXT。放在这里是为了标清"哪些复杂度不归我们"。
 - **红的热点**：见第 6 节。
-- **最底部两行文字**：4 条跨上下文集成关系 + 共享内核声明 + 本次四步流程的时长。
+- **最底部两行文字**：5 条跨上下文集成关系 + 共享内核声明 + 本次四步流程的时长。
 
 ---
 
@@ -81,7 +81,7 @@
 | Step 1 Big Picture | 40 min | 全部橙贴（先只贴事件，不写命令） |
 | Step 2 Process Modeling | 30 min | 蓝贴（命令）、黄贴（角色）、粉贴（外部系统） |
 | Step 3 Software Design | 30 min | 紫贴（聚合 / 值对象）+ Q&A 框内三条不变式 |
-| Step 4 上下文映射与术语表 | 20 min | 四个虚线块（限界上下文）+ 底部 4 条集成关系 |
+| Step 4 上下文映射与术语表 | 20 min | 四个虚线块（限界上下文）+ 底部 5 条集成关系 |
 
 ---
 
@@ -128,10 +128,11 @@
 
 | 编号 | 上游 → 下游 | 模式 | 载体 |
 | --- | --- | --- | --- |
-| 1 | Identity → Q&A / Reputation / Discovery | 开放主机服务 + 发布语言（OHS/PL） | 同步：`IdentityApi` 查 `UserSummary`；异步：`UserRegisteredEvent` |
-| 2 | Q&A → Reputation | 客户 / 供应商（Customer/Supplier） | `Answer*` / `VoteCast` 事件；同步补数据走 `QaQueryApi.findQuestion` |
-| 3 | Q&A → Discovery | 遵奉者（Conformist） | `Question*` / `Answer*` / `VoteCast` / `Comment` / `ContentDeleted` 事件 |
-| 4 | Reputation → Discovery | 遵奉者（Conformist） | `Bounty*` / `BadgeAwarded` 事件 |
+| 1 | Identity → Q&A | 客户-供应商（Customer/Supplier） | 同步：`IdentityApi` 查询当前用户与角色 |
+| 2 | Identity → Reputation | 开放主机服务 + 发布语言（OHS/PL） | 异步：`UserRegisteredEvent` 触发开户 |
+| 3 | Q&A → Reputation | 发布-订阅（Pub/Sub）+ 防腐层（ACL） | `Answer*` / `VoteCast` 事件；Reputation 用 ACL 转内部命令 |
+| 4 | Q&A → Discovery | 遵奉者（Conformist） | `Question*` / `Answer*` / `VoteCast` / `Comment` / `ContentDeleted` 事件 |
+| 5 | Reputation → Discovery | 遵奉者（Conformist） | `Bounty*` / `BadgeAwarded` 事件 |
 | — | 全部上下文 → `co-shared-kernel` | 共享内核（Shared Kernel） | Maven 依赖 |
 
 ---
