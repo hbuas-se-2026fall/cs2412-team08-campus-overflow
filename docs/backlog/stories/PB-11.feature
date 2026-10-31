@@ -1,6 +1,6 @@
 # 提交物3 - Gherkin 验收标准 | 负责人: 秦悦 (QY2026932)
-# 故事范围: US-003 (团队 Sprint1 P0) | 边界值参考: 综合 Product Backlog PB-11
-Feature: US-003 访客浏览问题列表
+# 对应 Product Backlog: PB-11（按课程筛选、分页浏览问题列表、热门标签排序）
+Feature: PB-11 浏览问题列表
   作为访客或登录用户，我希望浏览问题列表，以便快速查看校园相关问题
 
   Scenario: 正常路径 - 访客无需登录即可浏览公开列表
