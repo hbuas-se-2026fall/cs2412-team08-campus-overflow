@@ -112,6 +112,11 @@
 | E3 | 工程初始化完成 | 执行 `pnpm typecheck` | TypeScript 类型检查通过，**无 any 逃逸**（strict + noUncheckedIndexedAccess 生效） |
 | E4 | 已配置 Husky + lint-staged | 提交一个含 `console.log`/格式不合规的文件 | pre-commit 钩子拦截提交，给出 ESLint/Prettier 提示 |
 | E5 | 已配置 Vite path alias | 源码中使用 `@/` 导入 | `pnpm dev` 与 `pnpm build` 均可正常解析 |
+| E6 | 工程初始化完成 | 检查 src 目录结构 | 存在 `features/`、`shared/`、`pages/`、`api/` 四个目录，业务代码按模块归位 |
+| E7 | 工程初始化完成 | 检查 package.json 依赖 | 含 react-router-dom v6、zustand、@tanstack/react-query、axios、antd |
+| E8 | 工程初始化完成 | 执行 `pnpm build` | 生产构建通过（DoD：前端须 typecheck 与 build 均通过） |
+| E9 | 页面实现完成 | 检查页面组件 | 全部为函数组件 + Hooks（useState/useQuery/useNavigate 等），无 class 组件 |
+| E10 | CI 流水线配置完成 | 查看 CI 前端阶段 | 包含 `tsc --noEmit`（typecheck）检查 |
 
 ### 4.2 功能验收（端到端：提问 → 列表 → 详情）
 
@@ -139,6 +144,21 @@
 
 > 验收口径：错误提示文案与 `docs/错误码.md` 一致；网络错误（5xx/超时）显示"服务暂不可用，请稍后重试"并提供重试按钮。
 
+### 4.4 验收标准 ↔ 测试/验证映射（DoR）
+
+按 DoR 要求，验收标准须标出对应的已有测试类或需新增的测试。前端故事的后端规则已由领域/应用层测试覆盖，前端本身以 CI 命令 + 手工端到端验证：
+
+| 验收标准 | 对应测试类 / 验证方式 |
+| --- | --- |
+| F1 发布问题（字段规则） | 已有：`QuestionTest.Posting`、`QuestionCommandServiceTest`（后端）；前端：提问页表单校验 + 手工端到端 |
+| F2/F3 列表、详情显示 | 已有：`QuestionQueryService.list/detail` 测试；前端：列表/详情页手工端到端 |
+| F4 评论 | 已有：`VoteAndCommentTest`（Comment.post）；前端：详情页评论手工验证 |
+| F5 前端即时校验 | 前端：提问页表单校验（与 QA-1001/1002/1005 文案一致） |
+| A1–A8 错误场景 | 后端：各领域/应用层测试断言错误码；前端：按 `docs/错误码.md` 映射文案，手工验证 |
+| E1–E10 工程验收 | CI 命令：`pnpm dev` / `pnpm lint` / `pnpm typecheck` / `pnpm build` / pre-commit |
+
+> 说明：前端暂未引入单测框架（vitest 等），验收以 CI 命令 + 端到端手工验证为准；如后续加入前端单测，应覆盖表单校验与错误提示映射。
+
 ---
 
 ## 5. 页面原型逻辑审核
@@ -158,13 +178,14 @@ AppShell（Header + Sidebar + Outlet）
 **关键逻辑约束**：
 1. 写操作权限由后端强制校验，前端仅按返回的 permissions 隐藏按钮（不做安全边界）；
 2. 服务器状态用 TanStack Query 缓存，客户端状态（表单、筛选、分页）用 Zustand，禁止 prop drilling；
-3. 所有接口错误统一经 axios 拦截器解析 `{code, message}` 后映射为友好文案。
+3. 页面统一使用函数组件 + Hooks 实现，UI 组件基于 Ant Design 5；
+4. 所有接口错误统一经 axios 拦截器解析 `{code, message}` 后映射为友好文案。
 
 ### 5.2 审核结论
 
 | 审核项 | 结论 |
 | --- | --- |
-| 页面覆盖完整（提问/列表/详情/AppShell） | 通过：覆盖详案提交物 4 的端到端路径 |
+| 页面覆盖完整（提问/列表/详情/AppShell） | 通过：覆盖端到端路径（提问 → 列表 → 详情） |
 | 字段规则与领域层一致（10–150 / 1–5 / 20–30000 / 2–600） | 通过：与 QA-1001~1006 及术语表一致 |
 | 权限模型正确（课程管理者/教师/助教/作者） | 通过：对齐统一语言与错误码 QA-3001~3004 |
 | 错误提示覆盖关键失败场景 | 通过：见 4.3，含权限/校验/冲突/网络四类 |
