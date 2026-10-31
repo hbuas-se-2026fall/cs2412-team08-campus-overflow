@@ -9,10 +9,10 @@
 
 | 上下文 | 子域类型 | 职责 | 聚合根 |
 | --- | --- | --- | --- |
-| `co-identity` | 支撑域 | 用户注册、登录、认证、账号禁用、课程成员管理 | User、CourseMember |
+| `co-identity` | 支撑域 | 用户注册、登录、认证、账号禁用、课程成员管理 | User（CourseMember为User内实体） |
 | `co-qa` | **核心域** | 提问、回答、评论、投票、采纳、编辑/软删除、教师认证 | Question、Answer、Vote、Comment |
 | `co-reputation` | **核心域** | 声誉账户、积分账本、采纳/投票计分、徽章、悬赏、排行榜 | ReputationAccount、Bounty |
-| `co-discovery` | 支撑域 | 搜索索引、相关推荐、通知中心、@提醒 | SearchDocument、Notification |
+| `co-discovery` | 支撑域 | 搜索索引、相关推荐、通知中心、@提醒 | Notification（SearchDocument为读模型/投影，非聚合根） |
 | `co-shared-kernel` | 共享域 | 领域事件基类、通用值对象、ID生成器、错误码 | （无聚合，共享代码） |
 | `co-bootstrap` | 通用域 | Spring自动装配各上下文实现，启动入口 | （无） |
 
