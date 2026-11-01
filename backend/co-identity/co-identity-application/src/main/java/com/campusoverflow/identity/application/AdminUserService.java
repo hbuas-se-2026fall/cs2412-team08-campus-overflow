@@ -79,6 +79,14 @@ public class AdminUserService {
         audit.record("ROLE_CHANGED", actor.userId(), "USER", String.valueOf(userId), old + " -> " + role);
     }
 
+    @Transactional
+    public void disable(Actor actor, long userId) {
+        User user = load(userId);
+        user.disable(actor);
+        users.save(user);
+        audit.record("USER_DISABLED", actor.userId(), "USER", String.valueOf(userId), null);
+    }
+
     private User load(long userId) {
         return users.findById(userId).orElseThrow(() -> new NotFoundException("ID-4001", "用户不存在"));
     }

@@ -3,7 +3,9 @@ package com.campusoverflow.identity.interfaces;
 import com.campusoverflow.identity.application.AuthenticationAuditService;
 import com.campusoverflow.identity.application.LoginThrottle;
 import com.campusoverflow.identity.application.MeView;
+import com.campusoverflow.identity.application.ProfileService;
 import com.campusoverflow.identity.application.RegisterUserCommand;
+import com.campusoverflow.identity.application.UpdateProfileCommand;
 import com.campusoverflow.identity.application.UserQueryService;
 import com.campusoverflow.identity.application.UserRegistrationService;
 import com.campusoverflow.shared.security.Actor;
@@ -46,17 +48,20 @@ public class AuthController {
 
     private final UserRegistrationService registration;
     private final UserQueryService userQuery;
+    private final ProfileService profileService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final LoginThrottle throttle;
     private final AuthenticationAuditService authAudit;
 
     public AuthController(UserRegistrationService registration, UserQueryService userQuery,
+                          ProfileService profileService,
                           AuthenticationManager authenticationManager,
                           SecurityContextRepository securityContextRepository, LoginThrottle throttle,
                           AuthenticationAuditService authAudit) {
         this.registration = registration;
         this.userQuery = userQuery;
+        this.profileService = profileService;
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.throttle = throttle;
@@ -113,6 +118,17 @@ public class AuthController {
     @GetMapping("/me")
     public MeView me(@Parameter(hidden = true) Actor actor) {
         return userQuery.me(actor.userId());
+    }
+
+    @Operation(summary = "更新个人资料（昵称、邮箱）")
+    @PutMapping("/profile")
+    public MeView updateProfile(@Parameter(hidden = true) Actor actor,
+                                @Valid @RequestBody UpdateProfileRequest req) {
+        return profileService.updateProfile(actor, new UpdateProfileCommand(req.displayName(), req.email()));
+    }
+
+    public record UpdateProfileRequest(@NotBlank @Size(min = 2, max = 20) String displayName,
+                                       @NotBlank @Size(max = 100) String email) {
     }
 
     public record RegisterRequest(
