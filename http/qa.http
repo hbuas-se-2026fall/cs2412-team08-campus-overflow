@@ -50,12 +50,16 @@ Content-Type: application/json
   "tags": ["测试"]
 }
 
-### 6. 并发冲突演示（Sprint 评审演示第 3 步）：故意带旧版本号提交 → 预期 409 SYS-409-CONCURRENT
-# 步骤：先用请求 1 发布，记下返回的 version；再同时提交两个修改请求（改标题），后到者 409。
-POST {{host}}/api/v1/questions/1
+### 6. 编辑问题（整体替换标题/正文/标签，PB-16）——Sprint 评审演示第 3 步
+PUT {{host}}/api/v1/questions/1
 Content-Type: application/json
 
 {
+  "courseId": 100,
   "title": "红黑树插入后如何判断旋转方向？（修改版）",
-  "version": 0
+  "body": "插入节点后出现连续红色节点，什么时候左旋、什么时候右旋？补充：按 LL/LR/RL/RR 四种情况判断。",
+  "tags": ["数据结构", "红黑树", "平衡树"]
 }
+
+### 7. 问题详情（评审演示收尾：查看渲染后的正文与操作按钮，PB-12）
+GET {{host}}/api/v1/questions/1
