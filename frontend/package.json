@@ -8,9 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "gen:api": "tsx scripts/gen-api.ts",
-    "lint": "eslint src --ext .ts,.tsx",
-    "format": "prettier --write src"
+    "gen:api": "tsx scripts/gen-api.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.0",
