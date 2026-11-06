@@ -54,32 +54,72 @@ public class BountyService {
 
     @Transactional
     public long open(Actor actor, long questionId, int points, int days) {
-        // TODO(S3)：实现 BountyService.open——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：BountyService.open 尚未实现");
+        QuestionRef q = qa.findQuestion(questionId)
+                .orElseThrow(() -> new NotFoundException("RP-4001", "问题不存在"));
+        boolean canManage = identity.canManageCourse(actor.userId(), q.courseId());
+        ReputationAccount sponsor = accounts.findByUserId(actor.userId())
+                .orElseThrow(() -> new NotFoundException("RP-4002", "声誉账户不存在"));
+        Bounty bounty = Bounty.open(questionId, !q.deleted(), actor, canManage, points, days, clock.instant());
+        sponsor.freezePoints(points);
+        accounts.save(sponsor);
+        bounties.save(bounty);
+        events.publish(new BountyOpenedEvent(EventIds.next(), clock.instant(),
+                bounty.id(), questionId, actor.userId(), points, bounty.expiresAt()));
+        audit.record("BOUNTY_OPENED", actor.userId(), "BOUNTY", String.valueOf(bounty.id()),
+                "points=" + points);
+        return bounty.id();
     }
 
     /** 由 AnswerAccepted 事件触发（在处理器事务内）。幂等：悬赏已结束则直接返回。 */
     @Transactional(propagation = Propagation.MANDATORY)
     public void settleOnAccept(long questionId, long answerId, long winnerId, String sourceEventId) {
-        // TODO(S3)：实现 BountyService.settleOnAccept——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：BountyService.settleOnAccept 尚未实现");
+        Optional<Bounty> opt = bounties.findOpenByQuestion(questionId);
+        if (opt.isEmpty()) {
+            return;
+        }
+        Bounty bounty = opt.get();
+        ReputationAccount sponsor = accounts.findByUserId(bounty.sponsorId()).orElse(null);
+        bounty.award(answerId, winnerId, clock.instant());
+        if (sponsor != null) {
+            sponsor.spendFrozen(bounty.points());
+            accounts.save(sponsor);
+        }
+        ledgerService.record(winnerId, sourceEventId, ReputationReason.BOUNTY_AWARDED,
+                bounty.points(), "BOUNTY", bounty.id());
+        bounties.save(bounty);
+        events.publish(new BountyAwardedEvent(EventIds.next(), clock.instant(),
+                bounty.id(), questionId, bounty.sponsorId(), winnerId, bounty.points()));
     }
 
     /** 到期未采纳的悬赏：关闭并退回冻结积分。由定时任务调用。 */
     @Transactional
     public int expireDue() {
-        // TODO(S3)：实现 BountyService.expireDue——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：BountyService.expireDue 尚未实现");
+        List<Bounty> due = bounties.findDue(clock.instant(), 100);
+        for (Bounty b : due) {
+            ReputationAccount sponsor = accounts.findByUserId(b.sponsorId()).orElse(null);
+            b.close(clock.instant());
+            if (sponsor != null) {
+                sponsor.refundFrozen(b.points());
+                accounts.save(sponsor);
+            }
+            bounties.save(b);
+            events.publish(new BountyClosedEvent(EventIds.next(), clock.instant(),
+                    b.id(), b.questionId(), b.sponsorId(), b.points()));
+        }
+        return due.size();
     }
 
     @Transactional(readOnly = true)
     public Optional<BountyView> latest(long questionId) {
-        // TODO(S3)：实现 BountyService.latest——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：BountyService.latest 尚未实现");
+        return bounties.findLatestByQuestion(questionId).map(b -> new BountyView(
+                b.id(), b.questionId(), b.sponsorId(), "", b.points(), b.status().name(),
+                b.createdAt(), b.expiresAt(), b.winnerId(), b.answerId()));
     }
 
     private void closeAndRefund(Bounty bounty, ReputationAccount sponsor, Instant now) {
-        // TODO(S3)：实现 BountyService.closeAndRefund——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：BountyService.closeAndRefund 尚未实现");
+        bounty.close(now);
+        sponsor.refundFrozen(bounty.points());
+        accounts.save(sponsor);
+        bounties.save(bounty);
     }
 }

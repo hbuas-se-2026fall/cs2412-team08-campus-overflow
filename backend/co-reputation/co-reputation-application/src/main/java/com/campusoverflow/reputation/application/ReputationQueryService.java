@@ -32,13 +32,27 @@ public class ReputationQueryService {
     }
 
     public ReputationProfileView profile(long userId, Actor viewerOrNull) {
-        // TODO(S3)：实现 ReputationQueryService.profile——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：ReputationQueryService.profile 尚未实现");
+        ReputationAccount acc = accounts.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("RP-4003", "声誉账户不存在"));
+        UserSummary user = identity.findUser(userId).orElse(null);
+        String displayName = user != null ? user.displayName() : "";
+        boolean self = viewerOrNull != null && viewerOrNull.userId() == userId;
+        Integer points = self ? acc.availablePoints() : null;
+        Integer frozen = self ? acc.frozenPoints() : null;
+        var badgeViews = badges.findByUser(userId).stream()
+                .map(b -> new ReputationProfileView.BadgeView(
+                        b.type().name(), b.type().displayName(), b.type().description(), b.awardedAt()))
+                .toList();
+        return new ReputationProfileView(userId, displayName, acc.reputation(), points, frozen, badgeViews);
     }
 
     /** 声誉流水属于个人数据：仅本人与管理员可查看。 */
     public PageResult<LedgerEntryView> ledger(long userId, Actor viewer, PageRequest page) {
-        // TODO(S3)：实现 ReputationQueryService.ledger——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：ReputationQueryService.ledger 尚未实现");
+        if (viewer.userId() != userId && !viewer.role().name().equals("ADMIN")) {
+            throw new ForbiddenException("RP-4004", "只能查看自己的声誉流水");
+        }
+        PageResult<LedgerEntry> page = ledger.findByUser(userId, page);
+        return page.map(e -> new LedgerEntryView(e.id(), e.reason().name(), e.reason().label(),
+                e.delta(), e.refType(), e.refId(), e.createdAt()));
     }
 }

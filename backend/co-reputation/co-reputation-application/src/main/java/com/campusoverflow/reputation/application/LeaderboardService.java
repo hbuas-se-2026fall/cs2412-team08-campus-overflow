@@ -35,13 +35,32 @@ public class LeaderboardService {
     @EventListener
     @Transactional
     public void on(ReputationChangedEvent e) {
-        // TODO(S3)：实现 LeaderboardService.on——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：LeaderboardService.on 尚未实现");
+        store.increment(e.userId(), e.delta(), e.occurredAt());
     }
 
     @Transactional(readOnly = true)
     public List<LeaderboardEntryView> top(LeaderboardPeriod period, int limit) {
-        // TODO(S3)：实现 LeaderboardService.top——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：LeaderboardService.top 尚未实现");
+        if (period == LeaderboardPeriod.ALL) {
+            var accs = accounts.topByReputation(limit);
+            var users = identity.findUsers(accs.stream().map(ReputationAccount::userId).toList());
+            List<LeaderboardEntryView> result = new ArrayList<>();
+            int rank = 1;
+            for (var acc : accs) {
+                var u = users.get(acc.userId());
+                result.add(new LeaderboardEntryView(rank++, acc.userId(),
+                        u != null ? u.displayName() : "", u != null && u.verified(), acc.reputation()));
+            }
+            return result;
+        }
+        var entries = store.top(period, clock.instant(), limit);
+        var users = identity.findUsers(entries.stream().map(LeaderboardStore.Entry::userId).toList());
+        List<LeaderboardEntryView> result = new ArrayList<>();
+        int rank = 1;
+        for (var en : entries) {
+            var u = users.get(en.userId());
+            result.add(new LeaderboardEntryView(rank++, en.userId(),
+                    u != null ? u.displayName() : "", u != null && u.verified(), en.score()));
+        }
+        return result;
     }
 }
