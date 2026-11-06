@@ -39,3 +39,16 @@ http.interceptors.response.use(
     return Promise.reject(err);
   },
 );
+
+/**
+ * 类型安全的请求封装：拦截器已把响应体剥成 data，
+ * 这里显式声明返回 Promise<T>，避免业务层误把 AxiosResponse 当返回值。
+ */
+export const httpGet = <T>(url: string, params?: unknown) =>
+  http.get<unknown, T>(url, { params });
+export const httpPost = <T, B = unknown>(url: string, body?: B) =>
+  http.post<unknown, T>(url, body);
+export const httpPut = <T, B = unknown>(url: string, body?: B) =>
+  http.put<unknown, T>(url, body);
+export const httpDelete = <T>(url: string) =>
+  http.delete<unknown, T>(url);
