@@ -15,8 +15,8 @@
 
 ### 1.2 提交物
 
-1. 前端工程 `pnpm dev` 可启动，首页可访问；
-2. `pnpm lint` 与 `pnpm typecheck` 全绿；
+1. 前端工程 `npm run dev` 可启动，首页可访问；
+2. `npm run lint` 与 `npm run typecheck` 全绿；
 3. pre-commit 钩子可拦截不合规提交；
 4. 提问 → 列表显示 → 详情查看 端到端跑通，录屏 30 秒以内。
 
@@ -107,15 +107,15 @@
 
 | # | Given | When | Then |
 | --- | --- | --- | --- |
-| E1 | 已安装 Node 20+ 与 pnpm | 执行 `pnpm dev` 并打开首页 | 前端工程可启动，首页（问题列表）可访问，无控制台报错 |
-| E2 | 工程初始化完成 | 执行 `pnpm lint` | 无 ESLint 错误（0 error） |
-| E3 | 工程初始化完成 | 执行 `pnpm typecheck` | TypeScript 类型检查通过，**无 any 逃逸**（strict + noUncheckedIndexedAccess 生效） |
+| E1 | 已安装 Node 20+ 与 npm | 执行 `npm run dev` 并打开首页 | 前端工程可启动，首页（问题列表）可访问，无控制台报错 |
+| E2 | 工程初始化完成 | 执行 `npm run lint` | 无 ESLint 错误（0 error）；ESLint 配置随前端质量基础设施 PR 合入后生效（合入前以 typecheck 全绿为最低线） |
+| E3 | 工程初始化完成 | 执行 `npm run typecheck` | TypeScript 类型检查通过，**无 any 逃逸**（strict + noUncheckedIndexedAccess 生效） |
 | E4 | 已配置 Husky + lint-staged | 提交一个含 `console.log`/格式不合规的文件 | pre-commit 钩子拦截提交，给出 ESLint/Prettier 提示 |
-| E5 | 已配置 Vite path alias | 源码中使用 `@/` 导入 | `pnpm dev` 与 `pnpm build` 均可正常解析 |
+| E5 | 已配置 Vite path alias | 源码中使用 `@/` 导入 | `npm run dev` 与 `npm run build` 均可正常解析 |
 | E6 | 工程初始化完成 | 检查 src 目录结构 | 存在 `features/`、`shared/`、`pages/`、`api/` 四个目录，业务代码按模块归位 |
 | E7 | 工程初始化完成 | 检查 package.json 依赖 | 含 react-router-dom v6、zustand、@tanstack/react-query、axios、antd |
-| E8 | 工程初始化完成 | 执行 `pnpm build` | 生产构建通过（DoD：前端须 typecheck 与 build 均通过） |
-| E9 | 页面实现完成 | 检查页面组件 | 全部为函数组件 + Hooks（useState/useQuery/useNavigate 等），无 class 组件 |
+| E8 | 工程初始化完成 | 执行 `npm run build` | 生产构建通过（DoD：前端须 typecheck 与 build 均通过） |
+| E9 | 页面实现完成 | 检查页面组件 | 业务页面均为函数组件 + Hooks（useState/useQuery/useNavigate 等）；仅全局 ErrorBoundary 允许 class 组件（React 错误边界必须使用 class，属框架限制） |
 | E10 | CI 流水线配置完成 | 查看 CI 前端阶段 | 包含 `tsc --noEmit`（typecheck）检查 |
 
 ### 4.2 功能验收（端到端：提问 → 列表 → 详情）
@@ -155,7 +155,7 @@
 | F4 评论 | 已有：`VoteAndCommentTest`（Comment.post）；前端：详情页评论手工验证 |
 | F5 前端即时校验 | 前端：提问页表单校验（与 QA-1001/1002/1005 文案一致） |
 | A1–A8 错误场景 | 后端：各领域/应用层测试断言错误码；前端：按 `docs/错误码.md` 映射文案，手工验证 |
-| E1–E10 工程验收 | CI 命令：`pnpm dev` / `pnpm lint` / `pnpm typecheck` / `pnpm build` / pre-commit |
+| E1–E10 工程验收 | CI 命令：`npm run dev` / `npm run lint` / `npm run typecheck` / `npm run build` / pre-commit |
 
 > 说明：前端暂未引入单测框架（vitest 等），验收以 CI 命令 + 端到端手工验证为准；如后续加入前端单测，应覆盖表单校验与错误提示映射。
 
@@ -197,7 +197,7 @@ AppShell（Header + Sidebar + Outlet）
 
 | 步骤 | 操作 | 预期 |
 | --- | --- | --- |
-| 1 | `pnpm dev` 启动前端，打开首页 | 列表页加载，展示已有问题 |
+| 1 | `npm run dev` 启动前端，打开首页 | 列表页加载，展示已有问题 |
 | 2 | 登录（或使用已登录会话） | Header 显示昵称 |
 | 3 | 进入 `/questions/new`，填写合法问题并提交 | 跳转详情页，正文渲染 |
 | 4 | 返回 `/questions` | 新问题出现在列表 |
@@ -210,4 +210,4 @@ AppShell（Header + Sidebar + Outlet）
 - 术语与字段：`docs/ddd/glossary-v1.0.md`（title、tags、markdownBody、answer、comment、accept 等）
 - 错误码：`docs/错误码.md`（QA-1001~1020、QA-2002/2003、QA-3001~3004、QA-4001）
 - 后端接口：以 `backend/co-qa` 实际暴露的 REST 端点为准（POST /api/v1/questions 已贯通，列表/详情见 QuestionQueryService）
-- 完成定义（DoD）第 6 条：前端变更需 `pnpm typecheck && pnpm build` 通过
+- 完成定义（DoD）第 6 条：前端变更需 `npm run typecheck && npm run build` 通过
