@@ -1,6 +1,7 @@
 package com.campusoverflow.identity.infrastructure.security;
 
 import com.campusoverflow.identity.application.UserSessionTerminator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
  * 按 principal name（username）查出该用户全部会话并逐个删除。
  */
 @Component
+@ConditionalOnBean(FindByIndexNameSessionRepository.class)
 public class SpringSessionTerminator implements UserSessionTerminator {
 
     private final FindByIndexNameSessionRepository<? extends Session> sessionRepository;

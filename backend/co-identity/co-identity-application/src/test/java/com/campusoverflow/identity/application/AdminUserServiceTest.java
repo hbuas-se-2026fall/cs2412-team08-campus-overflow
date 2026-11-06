@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 @ExtendWith(MockitoExtension.class)
 class AdminUserServiceTest {
@@ -34,11 +35,13 @@ class AdminUserServiceTest {
     @Mock private IntegrationEventPublisher events;
     @Mock private AuditTrail audit;
     @Mock private UserSessionTerminator sessionTerminator;
+    @Mock private ObjectProvider<UserSessionTerminator> sessionTerminatorProvider;
     private AdminUserService service;
 
     @BeforeEach
     void setUp() {
-        service = new AdminUserService(users, hasher, events, audit, Clock.systemUTC(), sessionTerminator);
+        when(sessionTerminatorProvider.getIfAvailable()).thenReturn(sessionTerminator);
+        service = new AdminUserService(users, hasher, events, audit, Clock.systemUTC(), sessionTerminatorProvider);
     }
 
     private User makeUser(long id, String username, Role role) {

@@ -28,9 +28,10 @@ public class ProfileService {
                 .orElseThrow(() -> new NotFoundException("ID-4001", "用户不存在"));
         String oldDisplayName = user.displayName();
         String oldEmail = user.email();
-        // 昵称/邮箱唯一性校验（排除自己；邮箱大小写不敏感）
+        // 昵称/邮箱唯一性校验（排除自己；昵称和邮箱都大小写不敏感）
         String normEmail = cmd.email() == null ? null : cmd.email().toLowerCase();
-        if (users.existsByDisplayName(cmd.displayName()) && !cmd.displayName().equals(user.displayName())) {
+        String normDisplayName = cmd.displayName() == null ? null : cmd.displayName();
+        if (users.existsByDisplayName(normDisplayName) && !normDisplayName.equalsIgnoreCase(user.displayName())) {
             throw new ConflictException("ID-2002", "该昵称已被使用");
         }
         if (users.existsByEmail(normEmail) && !normEmail.equalsIgnoreCase(user.email())) {

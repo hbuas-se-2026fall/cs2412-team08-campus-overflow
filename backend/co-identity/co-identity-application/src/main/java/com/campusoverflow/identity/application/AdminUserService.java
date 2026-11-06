@@ -17,6 +17,7 @@ import com.campusoverflow.shared.security.Actor;
 import com.campusoverflow.shared.security.Role;
 import com.campusoverflow.shared.util.Masking;
 import java.time.Clock;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +30,17 @@ public class AdminUserService {
     private final IntegrationEventPublisher events;
     private final AuditTrail audit;
     private final Clock clock;
-    private final UserSessionTerminator sessionTerminator;
+    private final ObjectProvider<UserSessionTerminator> sessionTerminatorProvider;
 
     public AdminUserService(UserRepository users, PasswordHasher hasher, IntegrationEventPublisher events,
-                            AuditTrail audit, Clock clock, UserSessionTerminator sessionTerminator) {
+                            AuditTrail audit, Clock clock,
+                            ObjectProvider<UserSessionTerminator> sessionTerminatorProvider) {
         this.users = users;
         this.hasher = hasher;
         this.events = events;
         this.audit = audit;
         this.clock = clock;
-        this.sessionTerminator = sessionTerminator;
+        this.sessionTerminatorProvider = sessionTerminatorProvider;
     }
 
     @Transactional(readOnly = true)
@@ -87,7 +89,11 @@ public class AdminUserService {
         user.disable(actor);
         users.save(user);
         // 即时下线：删除该用户全部服务端会话，不等 Cookie 过期（ADR-003 / T4-02）
-        sessionTerminator.terminateAll(user.username());
+        // 用 ObjectProvider 延迟查找，Spring Session 未配置时不影响应用启动
+        UserSessionTerminator terminator = sessionTerminatorProvider.getIfAvailable();
+        if (terminator != null) {
+            terminator.terminateAll(user.username());
+        }
         audit.record("USER_DISABLED", actor.userId(), "USER", String.valueOf(userId),
                 "session invalidated for " + Masking.account(user.username()));
     }
