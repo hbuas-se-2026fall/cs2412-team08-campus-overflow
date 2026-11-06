@@ -26,17 +26,30 @@ public class ProfileService {
     public MeView updateProfile(Actor actor, UpdateProfileCommand cmd) {
         User user = users.findById(actor.userId())
                 .orElseThrow(() -> new NotFoundException("ID-4001", "用户不存在"));
-        // 昵称/邮箱唯一性校验（排除自己）
+        String oldDisplayName = user.displayName();
+        String oldEmail = user.email();
+        // 昵称/邮箱唯一性校验（排除自己；邮箱大小写不敏感）
+        String normEmail = cmd.email() == null ? null : cmd.email().toLowerCase();
         if (users.existsByDisplayName(cmd.displayName()) && !cmd.displayName().equals(user.displayName())) {
             throw new ConflictException("ID-2002", "该昵称已被使用");
         }
-        if (users.existsByEmail(cmd.email()) && !cmd.email().equals(user.email())) {
+        if (users.existsByEmail(normEmail) && !normEmail.equalsIgnoreCase(user.email())) {
             throw new ConflictException("ID-2003", "该邮箱已被使用");
         }
         user.updateProfile(actor, cmd.displayName(), cmd.email());
         users.save(user);
-        audit.record("PROFILE_UPDATED", actor.userId(), "USER", String.valueOf(user.id()), null);
+        audit.record("PROFILE_UPDATED", actor.userId(), "USER", String.valueOf(user.id()),
+                oldDisplayName + " -> " + user.displayName() + "; "
+                        + maskEmail(oldEmail) + " -> " + maskEmail(user.email()));
         return new MeView(user.id(), user.username(), user.displayName(), user.email(), user.role(),
                 user.verified(), user.college(), user.className(), List.of());
+    }
+
+    private static String maskEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            return email;
+        }
+        int at = email.indexOf('@');
+        return email.charAt(0) + "***" + email.substring(at);
     }
 }

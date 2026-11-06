@@ -29,14 +29,16 @@ public class AdminUserService {
     private final IntegrationEventPublisher events;
     private final AuditTrail audit;
     private final Clock clock;
+    private final UserSessionTerminator sessionTerminator;
 
     public AdminUserService(UserRepository users, PasswordHasher hasher, IntegrationEventPublisher events,
-                            AuditTrail audit, Clock clock) {
+                            AuditTrail audit, Clock clock, UserSessionTerminator sessionTerminator) {
         this.users = users;
         this.hasher = hasher;
         this.events = events;
         this.audit = audit;
         this.clock = clock;
+        this.sessionTerminator = sessionTerminator;
     }
 
     @Transactional(readOnly = true)
@@ -84,7 +86,10 @@ public class AdminUserService {
         User user = load(userId);
         user.disable(actor);
         users.save(user);
-        audit.record("USER_DISABLED", actor.userId(), "USER", String.valueOf(userId), null);
+        // 即时下线：删除该用户全部服务端会话，不等 Cookie 过期（ADR-003 / T4-02）
+        sessionTerminator.terminateAll(user.username());
+        audit.record("USER_DISABLED", actor.userId(), "USER", String.valueOf(userId),
+                "session invalidated for " + Masking.account(user.username()));
     }
 
     private User load(long userId) {
