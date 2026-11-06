@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-cd frontend && pnpm lint-staged
+cd frontend && npx lint-staged
