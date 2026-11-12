@@ -15,6 +15,7 @@ import com.campusoverflow.qa.domain.Question;
 import com.campusoverflow.qa.domain.Tags;
 import com.campusoverflow.qa.domain.TargetType;
 import com.campusoverflow.qa.domain.Title;
+import com.campusoverflow.shared.domain.BusinessRuleException;
 import com.campusoverflow.shared.domain.NotFoundException;
 import com.campusoverflow.shared.security.Actor;
 import com.campusoverflow.shared.security.Role;
@@ -90,6 +91,19 @@ class CommentServiceTest {
 
         Comment reply = comments.findById(replyId).orElseThrow();
         assertThat(reply.parentId()).isEqualTo(parentId);
+    }
+
+    @Test
+    @DisplayName("不允许对回复再回复（二层拒绝）")
+    void secondLevelReplyRejected() {
+        long parentId = commentService.post(ming,
+                new PostCommentCommand(TargetType.ANSWER, answerId, null, "父评论：先问一个问题。"));
+        long replyId = commentService.post(hong,
+                new PostCommentCommand(TargetType.ANSWER, answerId, parentId, "一层回复：因为要保持黑高一致。"));
+
+        assertThatThrownBy(() -> commentService.post(ming,
+                new PostCommentCommand(TargetType.ANSWER, answerId, replyId, "二层回复：再追问一句。")))
+                .isInstanceOf(BusinessRuleException.class).extracting("code").isEqualTo("QA-1016");
     }
 
     @Test
