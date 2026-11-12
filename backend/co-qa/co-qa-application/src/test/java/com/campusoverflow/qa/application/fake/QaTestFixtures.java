@@ -3,8 +3,10 @@ package com.campusoverflow.qa.application.fake;
 import com.campusoverflow.identity.api.CourseSummary;
 import com.campusoverflow.identity.api.IdentityApi;
 import com.campusoverflow.identity.api.UserSummary;
+import com.campusoverflow.qa.application.port.ContentRenderer;
 import com.campusoverflow.qa.application.port.QaReadModel;
 import com.campusoverflow.qa.application.port.QuestionListCache;
+import com.campusoverflow.qa.application.port.ViewCounter;
 import com.campusoverflow.qa.application.query.AnswerRow;
 import com.campusoverflow.qa.application.query.CommentRow;
 import com.campusoverflow.qa.application.query.QuestionRow;
@@ -218,6 +220,24 @@ public final class QaTestFixtures {
         @Override
         public void invalidateAll() {
             invalidations++;
+        }
+    }
+
+    public static class StubContentRenderer implements ContentRenderer {
+        @Override
+        public String toSafeHtml(String markdown) {
+            return markdown;
+        }
+
+        @Override
+        public String toPlainText(String markdown, int maxLength) {
+            return markdown;
+        }
+    }
+
+    public static class StubViewCounter implements ViewCounter {
+        @Override
+        public void increment(long questionId) {
         }
     }
 

@@ -3,6 +3,8 @@ package com.campusoverflow.qa.application.query;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.campusoverflow.qa.application.fake.QaTestFixtures.CountingCache;
+import com.campusoverflow.qa.application.fake.QaTestFixtures.StubContentRenderer;
+import com.campusoverflow.qa.application.fake.QaTestFixtures.StubViewCounter;
 import com.campusoverflow.qa.application.fake.QaTestFixtures.InMemoryReadModel;
 import com.campusoverflow.qa.application.fake.QaTestFixtures.StubIdentity;
 import java.util.List;
@@ -18,7 +20,7 @@ class QuestionQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        queryService = new QuestionQueryService(readModel, new StubIdentity(), null, null, new CountingCache());
+        queryService = new QuestionQueryService(readModel, new StubIdentity(), new StubContentRenderer(), new StubViewCounter(), new CountingCache());
     }
 
     @Test

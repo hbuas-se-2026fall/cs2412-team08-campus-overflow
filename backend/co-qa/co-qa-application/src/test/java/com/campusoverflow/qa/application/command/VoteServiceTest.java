@@ -8,12 +8,14 @@ import com.campusoverflow.qa.application.fake.QaTestFixtures.InMemoryAnswers;
 import com.campusoverflow.qa.application.fake.QaTestFixtures.InMemoryQuestions;
 import com.campusoverflow.qa.application.fake.QaTestFixtures.InMemoryVotes;
 import com.campusoverflow.qa.application.fake.QaTestFixtures.RecordingEvents;
+import com.campusoverflow.qa.domain.Answer;
 import com.campusoverflow.qa.domain.MarkdownBody;
 import com.campusoverflow.qa.domain.Question;
 import com.campusoverflow.qa.domain.Tags;
 import com.campusoverflow.qa.domain.TargetType;
 import com.campusoverflow.qa.domain.Title;
 import com.campusoverflow.shared.domain.BusinessRuleException;
+import com.campusoverflow.shared.domain.NotFoundException;
 import com.campusoverflow.shared.security.Actor;
 import com.campusoverflow.shared.security.Role;
 import java.time.Clock;
@@ -88,5 +90,31 @@ class VoteServiceTest {
 
         assertThat(cancel.scoreDelta()).isEqualTo(-1);
         assertThat(questions.scoreDeltas.get(questionId)).isZero();
+    }
+
+    @Test
+    @DisplayName("对回答投票：回答分数增加并发布 ANSWER 事件")
+    void voteOnAnswerBumpsAnswerScore() {
+        Question question = questions.findById(questionId).orElseThrow();
+        Answer answer = answers.save(Answer.submit(question, hong.userId(),
+                MarkdownBody.ofAnswer("关键在于黑高这个不变量。"), NOW));
+
+        VoteService.VoteResult result = voteService.cast(ming, TargetType.ANSWER, answer.id(), 1);
+
+        assertThat(result.scoreDelta()).isEqualTo(1);
+        assertThat(answers.scoreDeltas.get(answer.id())).isEqualTo(1);
+        assertThat(events.ofType(VoteCastEvent.class).get(0).targetType()).isEqualTo("ANSWER");
+    }
+
+    @Test
+    @DisplayName("对已删除问题投票返回 404，且不发布事件")
+    void voteOnDeletedQuestionReturns404() {
+        Question deleted = questions.findById(questionId).orElseThrow();
+        deleted.softDelete(ming, false, NOW);
+        questions.save(deleted);
+
+        assertThatThrownBy(() -> voteService.cast(hong, TargetType.QUESTION, questionId, 1))
+                .isInstanceOf(NotFoundException.class).extracting("code").isEqualTo("QA-4001");
+        assertThat(events.published).isEmpty();
     }
 }
