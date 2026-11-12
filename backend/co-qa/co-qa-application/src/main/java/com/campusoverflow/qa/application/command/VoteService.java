@@ -8,13 +8,11 @@ import com.campusoverflow.qa.domain.QuestionRepository;
 import com.campusoverflow.qa.domain.TargetType;
 import com.campusoverflow.qa.domain.Vote;
 import com.campusoverflow.qa.domain.VoteRepository;
-import com.campusoverflow.shared.domain.BusinessRuleException;
 import com.campusoverflow.shared.domain.NotFoundException;
 import com.campusoverflow.shared.event.EventIds;
 import com.campusoverflow.shared.event.IntegrationEventPublisher;
 import com.campusoverflow.shared.security.Actor;
 import java.time.Clock;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -88,11 +86,11 @@ public class VoteService {
 
     private Target resolve(TargetType type, long targetId) {
         if (type == TargetType.QUESTION) {
-            Question q = questions.findById(targetId)
+            Question q = questions.findById(targetId).filter(x -> !x.isDeleted())
                     .orElseThrow(() -> new NotFoundException("QA-4001", "问题不存在"));
             return new Target(q.authorId(), q.id());
         } else {
-            Answer a = answers.findById(targetId)
+            Answer a = answers.findById(targetId).filter(x -> !x.isDeleted())
                     .orElseThrow(() -> new NotFoundException("QA-4002", "回答不存在"));
             return new Target(a.authorId(), a.questionId());
         }

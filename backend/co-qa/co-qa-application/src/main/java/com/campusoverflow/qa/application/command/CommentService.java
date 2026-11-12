@@ -39,11 +39,11 @@ public class CommentService {
     public long post(Actor actor, PostCommentCommand cmd) {
         long questionId;
         if (cmd.targetType() == TargetType.QUESTION) {
-            Question q = questions.findById(cmd.targetId())
+            Question q = questions.findById(cmd.targetId()).filter(x -> !x.isDeleted())
                     .orElseThrow(() -> new NotFoundException("QA-4001", "问题不存在"));
             questionId = q.id();
         } else {
-            Answer a = answers.findById(cmd.targetId())
+            Answer a = answers.findById(cmd.targetId()).filter(x -> !x.isDeleted())
                     .orElseThrow(() -> new NotFoundException("QA-4002", "回答不存在"));
             questionId = a.questionId();
         }

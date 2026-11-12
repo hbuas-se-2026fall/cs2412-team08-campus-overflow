@@ -54,7 +54,7 @@ public class QuestionQueryService {
     }
 
     public List<TagView> popularTags(int limit) {
-        // TODO(S2)：实现 QuestionQueryService.popularTags——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：QuestionQueryService.popularTags 尚未实现");
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        return readModel.popularTags(safeLimit);
     }
 }
