@@ -6,7 +6,6 @@ import com.campusoverflow.shared.audit.AuditTrail;
 import com.campusoverflow.shared.domain.ConflictException;
 import com.campusoverflow.shared.domain.NotFoundException;
 import com.campusoverflow.shared.security.Actor;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +15,12 @@ public class ProfileService {
 
     private final UserRepository users;
     private final AuditTrail audit;
+    private final UserQueryService userQuery;
 
-    public ProfileService(UserRepository users, AuditTrail audit) {
+    public ProfileService(UserRepository users, AuditTrail audit, UserQueryService userQuery) {
         this.users = users;
         this.audit = audit;
+        this.userQuery = userQuery;
     }
 
     @Transactional
@@ -28,10 +29,10 @@ public class ProfileService {
                 .orElseThrow(() -> new NotFoundException("ID-4001", "用户不存在"));
         String oldDisplayName = user.displayName();
         String oldEmail = user.email();
-        // 昵称/邮箱唯一性校验（排除自己；昵称和邮箱都大小写不敏感）
-        String normEmail = cmd.email() == null ? null : cmd.email().toLowerCase();
-        String normDisplayName = cmd.displayName() == null ? null : cmd.displayName();
-        if (users.existsByDisplayName(normDisplayName) && !normDisplayName.equalsIgnoreCase(user.displayName())) {
+        // 昵称/邮箱唯一性校验（排除自己；邮箱大小写不敏感，由仓储按小写比对）
+        String normEmail = cmd.email().toLowerCase();
+        if (users.existsByDisplayName(cmd.displayName())
+                && !cmd.displayName().equalsIgnoreCase(user.displayName())) {
             throw new ConflictException("ID-2002", "该昵称已被使用");
         }
         if (users.existsByEmail(normEmail) && !normEmail.equalsIgnoreCase(user.email())) {
@@ -42,8 +43,8 @@ public class ProfileService {
         audit.record("PROFILE_UPDATED", actor.userId(), "USER", String.valueOf(user.id()),
                 oldDisplayName + " -> " + user.displayName() + "; "
                         + maskEmail(oldEmail) + " -> " + maskEmail(user.email()));
-        return new MeView(user.id(), user.username(), user.displayName(), user.email(), user.role(),
-                user.verified(), user.college(), user.className(), List.of());
+        // 复用 UserQueryService.me 组装完整 MeView（含课程徽章），与 GET /me 返回一致
+        return userQuery.me(user.id());
     }
 
     private static String maskEmail(String email) {

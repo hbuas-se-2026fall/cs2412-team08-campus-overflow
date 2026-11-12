@@ -1,6 +1,7 @@
 package com.campusoverflow.identity.application;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -12,6 +13,7 @@ import com.campusoverflow.identity.domain.PasswordHasher;
 import com.campusoverflow.identity.domain.User;
 import com.campusoverflow.identity.domain.UserRepository;
 import com.campusoverflow.shared.audit.AuditTrail;
+import com.campusoverflow.shared.domain.BusinessRuleException;
 import com.campusoverflow.shared.domain.ForbiddenException;
 import com.campusoverflow.shared.domain.NotFoundException;
 import com.campusoverflow.shared.event.IntegrationEventPublisher;
@@ -40,18 +42,14 @@ class AdminUserServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(sessionTerminatorProvider.getIfAvailable()).thenReturn(sessionTerminator);
-        service = new AdminUserService(users, hasher, events, audit, Clock.systemUTC(), sessionTerminatorProvider);
+        service = new AdminUserService(users, hasher, events, audit, Clock.systemUTC(),
+                sessionTerminatorProvider);
     }
 
     private User makeUser(long id, String username, Role role) {
         User u = User.register(username, "测试", username + "@school.edu.cn", "hash",
                 "学院", "班级", Instant.now());
-        try {
-            var f = User.class.getDeclaredField("id");
-            f.setAccessible(true);
-            f.set(u, id);
-        } catch (Exception e) { throw new RuntimeException(e); }
+        u.assignId(id);
         return u;
     }
 
@@ -60,6 +58,7 @@ class AdminUserServiceTest {
         Actor admin = new Actor(1L, "admin", Role.ADMIN);
         User target = makeUser(2L, "zhangsan", Role.STUDENT);
         when(users.findById(2L)).thenReturn(Optional.of(target));
+        when(sessionTerminatorProvider.getIfAvailable()).thenReturn(sessionTerminator);
 
         assertDoesNotThrow(() -> service.disable(admin, 2L));
         verify(users).save(target);
@@ -69,6 +68,9 @@ class AdminUserServiceTest {
     @Test
     void disable_非管理员_抛403() {
         Actor student = new Actor(99L, "lisi", Role.STUDENT);
+        User target = makeUser(2L, "zhangsan", Role.STUDENT);
+        when(users.findById(2L)).thenReturn(Optional.of(target));
+
         assertThrows(ForbiddenException.class, () -> service.disable(student, 2L));
         verify(users, never()).save(any());
         verify(sessionTerminator, never()).terminateAll(anyString());
@@ -86,7 +88,9 @@ class AdminUserServiceTest {
         Actor admin = new Actor(1L, "admin", Role.ADMIN);
         User self = makeUser(1L, "admin", Role.ADMIN);
         when(users.findById(1L)).thenReturn(Optional.of(self));
-        // User.disable 内部会抛 ID-1007 BusinessRuleException
-        assertThrows(RuntimeException.class, () -> service.disable(admin, 1L));
+        // User.disable 内部抛 ID-1007 BusinessRuleException
+        BusinessRuleException ex = assertThrows(BusinessRuleException.class,
+                () -> service.disable(admin, 1L));
+        assertEquals("ID-1007", ex.code());
     }
 }

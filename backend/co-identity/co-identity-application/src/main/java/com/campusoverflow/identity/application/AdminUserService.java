@@ -91,11 +91,14 @@ public class AdminUserService {
         // 即时下线：删除该用户全部服务端会话，不等 Cookie 过期（ADR-003 / T4-02）
         // 用 ObjectProvider 延迟查找，Spring Session 未配置时不影响应用启动
         UserSessionTerminator terminator = sessionTerminatorProvider.getIfAvailable();
+        String sessionNote;
         if (terminator != null) {
             terminator.terminateAll(user.username());
+            sessionNote = "session invalidated for " + Masking.account(user.username());
+        } else {
+            sessionNote = "no session terminator configured; offline deferred for " + Masking.account(user.username());
         }
-        audit.record("USER_DISABLED", actor.userId(), "USER", String.valueOf(userId),
-                "session invalidated for " + Masking.account(user.username()));
+        audit.record("USER_DISABLED", actor.userId(), "USER", String.valueOf(userId), sessionNote);
     }
 
     private User load(long userId) {
