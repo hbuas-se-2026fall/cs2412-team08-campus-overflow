@@ -3,6 +3,7 @@ package com.campusoverflow.reputation.application;
 import com.campusoverflow.identity.api.IdentityApi;
 import com.campusoverflow.identity.api.UserSummary;
 import com.campusoverflow.reputation.domain.BadgeRepository;
+import com.campusoverflow.reputation.domain.LedgerEntry;
 import com.campusoverflow.reputation.domain.LedgerRepository;
 import com.campusoverflow.reputation.domain.ReputationAccount;
 import com.campusoverflow.reputation.domain.ReputationAccountRepository;
@@ -51,8 +52,8 @@ public class ReputationQueryService {
         if (viewer.userId() != userId && !viewer.role().name().equals("ADMIN")) {
             throw new ForbiddenException("RP-4004", "只能查看自己的声誉流水");
         }
-        PageResult<LedgerEntry> page = ledger.findByUser(userId, page);
-        return page.map(e -> new LedgerEntryView(e.id(), e.reason().name(), e.reason().label(),
+        PageResult<LedgerEntry> entries = ledger.findByUser(userId, page);
+        return entries.map(e -> new LedgerEntryView(e.id(), e.reason().name(), e.reason().label(),
                 e.delta(), e.refType(), e.refId(), e.createdAt()));
     }
 }

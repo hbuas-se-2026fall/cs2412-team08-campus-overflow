@@ -57,7 +57,7 @@ public class ReputationEventHandlers {
         int delta = ReputationRulebook.acceptedDelta(e.answerAuthorId(), e.questionAuthorId());
         ledgerService.record(e.answerAuthorId(), e.eventId(), ReputationReason.ANSWER_ACCEPTED,
                 delta, "ANSWER", e.answerId());
-        bounties.settleOnAccept(e.questionId(), e.answerId(), e.answerAuthorId(), clock.instant());
+        bounties.settleOnAccept(e.questionId(), e.answerId(), e.answerAuthorId(), e.eventId());
     }
 
     @EventListener
