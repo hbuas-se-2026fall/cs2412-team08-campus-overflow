@@ -116,4 +116,13 @@ class CommentServiceTest {
                 new PostCommentCommand(TargetType.ANSWER, 999L, null, "找不到目标的评论内容")))
                 .isInstanceOf(NotFoundException.class).extracting("code").isEqualTo("QA-4002");
     }
+
+    @Test
+    @DisplayName("父评论不存在时返回 404（QA-4003），且不发布事件")
+    void missingParentReturns404() {
+        assertThatThrownBy(() -> commentService.post(hong,
+                new PostCommentCommand(TargetType.ANSWER, answerId, 999L, "回复一个不存在的父评论")))
+                .isInstanceOf(NotFoundException.class).extracting("code").isEqualTo("QA-4003");
+        assertThat(events.published).isEmpty();
+    }
 }
