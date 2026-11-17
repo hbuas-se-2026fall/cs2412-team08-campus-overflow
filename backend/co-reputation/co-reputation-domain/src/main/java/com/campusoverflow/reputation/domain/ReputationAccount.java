@@ -39,7 +39,7 @@ public class ReputationAccount {
     public void freezePoints(int points) {
         requirePositive(points);
         if (points > availablePoints) {
-            throw new BusinessRuleException("REP-1001", "可用悬赏积分不足，无法冻结");
+            throw new BusinessRuleException("REP-1002", "可用悬赏积分不足，无法冻结");
         }
         this.availablePoints -= points;
         this.frozenPoints += points;
@@ -62,13 +62,13 @@ public class ReputationAccount {
 
     private void ensureFrozen(int points) {
         if (points > frozenPoints) {
-            throw new BusinessRuleException("REP-1002", "冻结积分不足");
+            throw new BusinessRuleException("REP-1008", "冻结积分不足");
         }
     }
 
     private static void requirePositive(int points) {
         if (points <= 0) {
-            throw new BusinessRuleException("REP-1003", "积分数必须为正");
+            throw new BusinessRuleException("REP-1001", "积分数必须为正");
         }
     }
 

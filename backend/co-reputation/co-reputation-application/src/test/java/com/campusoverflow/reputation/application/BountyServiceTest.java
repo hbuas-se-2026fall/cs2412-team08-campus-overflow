@@ -66,6 +66,7 @@ class BountyServiceTest {
         verify(ledgerService).record(3L, "evt-1", ReputationReason.BOUNTY_AWARDED, 50, "BOUNTY", 1L);
         verify(events).publish(any(BountyAwardedEvent.class));
         verify(accounts).save(sponsor);
+        verify(audit).record(eq("BOUNTY_AWARDED"), eq(9L), eq("BOUNTY"), eq("1"), any());
         assertThat(bounty.winnerId()).isEqualTo(3L);
     }
 
@@ -82,6 +83,7 @@ class BountyServiceTest {
         verify(events).publish(any(BountyClosedEvent.class));
         verify(events, never()).publish(any(BountyAwardedEvent.class));
         verify(accounts).save(sponsor);
+        verify(audit).record(eq("BOUNTY_CLOSED"), eq(9L), eq("BOUNTY"), eq("1"), any());
         assertThat(bounty.winnerId()).isNull();
     }
 
@@ -97,6 +99,7 @@ class BountyServiceTest {
         verify(events).publish(any(BountyClosedEvent.class));
         verify(events, never()).publish(any(BountyAwardedEvent.class));
         verify(accounts, never()).save(any());
+        verify(audit).record(eq("BOUNTY_CLOSED"), eq(9L), eq("BOUNTY"), eq("1"), any());
         assertThat(bounty.winnerId()).isNull();
     }
 
@@ -131,6 +134,7 @@ class BountyServiceTest {
         assertThat(closed).isEqualTo(1);
         verify(events).publish(any(BountyClosedEvent.class));
         verify(accounts).save(sponsor);
+        verify(audit).record(eq("BOUNTY_CLOSED"), eq(9L), eq("BOUNTY"), eq("1"), any());
     }
 
     @Test

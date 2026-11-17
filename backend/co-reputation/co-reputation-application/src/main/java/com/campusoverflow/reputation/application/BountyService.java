@@ -55,7 +55,7 @@ public class BountyService {
     @Transactional
     public long open(Actor actor, long questionId, int points, int days) {
         QuestionRef q = qa.findQuestion(questionId)
-                .orElseThrow(() -> new NotFoundException("REP-4001", "问题不存在"));
+                .orElseThrow(() -> new NotFoundException("REP-4002", "问题不存在"));
         if (q.acceptedAnswerId() != null) {
             throw new BusinessRuleException("REP-1005", "问题已采纳，不能再发起悬赏");
         }
@@ -64,7 +64,7 @@ public class BountyService {
         }
         boolean canManage = identity.canManageCourse(actor.userId(), q.courseId());
         ReputationAccount sponsor = accounts.findByUserId(actor.userId())
-                .orElseThrow(() -> new NotFoundException("REP-4002", "声誉账户不存在"));
+                .orElseThrow(() -> new NotFoundException("REP-4001", "声誉账户不存在"));
         Bounty bounty = Bounty.open(questionId, !q.deleted(), actor, canManage, points, days, clock.instant());
         sponsor.freezePoints(points);
         accounts.save(sponsor);
@@ -103,6 +103,8 @@ public class BountyService {
         bounties.save(bounty);
         events.publish(new BountyAwardedEvent(EventIds.next(), clock.instant(),
                 bounty.id(), questionId, bounty.sponsorId(), winnerId, bounty.points()));
+        audit.record("BOUNTY_AWARDED", bounty.sponsorId(), "BOUNTY", String.valueOf(bounty.id()),
+                "winner=" + winnerId + ",points=" + bounty.points());
     }
 
     /** 到期未采纳的悬赏：关闭并退回冻结积分。由定时任务调用。 */
@@ -119,6 +121,8 @@ public class BountyService {
             bounties.save(b);
             events.publish(new BountyClosedEvent(EventIds.next(), clock.instant(),
                     b.id(), b.questionId(), b.sponsorId(), b.points()));
+            audit.record("BOUNTY_CLOSED", b.sponsorId(), "BOUNTY", String.valueOf(b.id()),
+                    "refundedPoints=" + b.points());
         }
         return due.size();
     }
@@ -143,5 +147,7 @@ public class BountyService {
         bounties.save(bounty);
         events.publish(new BountyClosedEvent(EventIds.next(), clock.instant(),
                 bounty.id(), bounty.questionId(), bounty.sponsorId(), bounty.points()));
+        audit.record("BOUNTY_CLOSED", bounty.sponsorId(), "BOUNTY", String.valueOf(bounty.id()),
+                "refundedPoints=" + bounty.points());
     }
 }

@@ -34,7 +34,7 @@ public class ReputationQueryService {
 
     public ReputationProfileView profile(long userId, Actor viewerOrNull) {
         ReputationAccount acc = accounts.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException("REP-4003", "声誉账户不存在"));
+                .orElseThrow(() -> new NotFoundException("REP-4001", "声誉账户不存在"));
         UserSummary user = identity.findUser(userId).orElse(null);
         String displayName = user != null ? user.displayName() : "";
         boolean self = viewerOrNull != null && viewerOrNull.userId() == userId;
