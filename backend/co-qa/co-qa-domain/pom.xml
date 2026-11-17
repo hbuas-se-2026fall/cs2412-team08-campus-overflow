@@ -11,6 +11,11 @@
     <artifactId>co-qa-domain</artifactId>
     <packaging>jar</packaging>
     <name>Q&amp;A 问答核心 :: domain（纯 Java）</name>
+    <properties>
+        <!-- T1-14：co-qa-domain 领域层行覆盖率门槛 0.70。
+             仅在本模块覆盖父级同名属性，其他领域模块仍沿用 backend/pom.xml 的 0。 -->
+        <domain.coverage.minimum>0.70</domain.coverage.minimum>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.campusoverflow</groupId>
