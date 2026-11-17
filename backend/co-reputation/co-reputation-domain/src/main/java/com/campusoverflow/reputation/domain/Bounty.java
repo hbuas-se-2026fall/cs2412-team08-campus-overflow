@@ -47,19 +47,19 @@ public class Bounty {
     public static Bounty open(long questionId, boolean questionOpen, Actor sponsor, boolean sponsorManagesCourse,
                               int points, int days, Instant now) {
         if (sponsor.role() == com.campusoverflow.shared.security.Role.STUDENT) {
-            throw new ForbiddenException("RP-3001", "学生不能发起悬赏");
+            throw new ForbiddenException("REP-3001", "学生不能发起悬赏");
         }
         if (!sponsorManagesCourse) {
-            throw new BusinessRuleException("RP-3002", "非课程管理者不能发起悬赏");
+            throw new BusinessRuleException("REP-1006", "非课程管理者不能发起悬赏");
         }
         if (!questionOpen) {
-            throw new BusinessRuleException("RP-3003", "问题已关闭，不能发起悬赏");
+            throw new BusinessRuleException("REP-3003", "问题已关闭，不能发起悬赏");
         }
         if (points < MIN_POINTS || points > MAX_POINTS) {
-            throw new BusinessRuleException("RP-3004", "悬赏积分须在 " + MIN_POINTS + "~" + MAX_POINTS + " 之间");
+            throw new BusinessRuleException("REP-3004", "悬赏积分须在 " + MIN_POINTS + "~" + MAX_POINTS + " 之间");
         }
         if (days < 1 || days > MAX_DAYS) {
-            throw new BusinessRuleException("RP-3005", "悬赏期限须在 1~" + MAX_DAYS + " 天之间");
+            throw new BusinessRuleException("REP-3005", "悬赏期限须在 1~" + MAX_DAYS + " 天之间");
         }
         return new Bounty(null, questionId, sponsor.userId(), points, BountyStatus.OPEN, now,
                 now.plus(Duration.ofDays(days)), null, null, null);
@@ -75,7 +75,7 @@ public class Bounty {
     public void award(long answerId, long winnerId, Instant now) {
         ensureOpen();
         if (winnerId == sponsorId) {
-            throw new BusinessRuleException("RP-3006", "发起人不能领取自己的悬赏");
+            throw new BusinessRuleException("REP-3006", "发起人不能领取自己的悬赏");
         }
         this.status = BountyStatus.AWARDED;
         this.winnerId = winnerId;
@@ -86,7 +86,7 @@ public class Bounty {
     /** 关闭并退款：到期未采纳，或被采纳的恰好是发起人自己的回答。 */
     public void close(Instant now) {
         if (this.status == BountyStatus.AWARDED) {
-            throw new ConflictException("RP-3007", "悬赏已发放，不能再关闭");
+            throw new ConflictException("REP-3007", "悬赏已发放，不能再关闭");
         }
         ensureOpen();
         this.status = BountyStatus.EXPIRED;
@@ -94,12 +94,12 @@ public class Bounty {
     }
 
     public boolean isDue(Instant now) {
-        return !now.isBefore(this.expiresAt);
+        return this.status == BountyStatus.OPEN && !now.isBefore(this.expiresAt);
     }
 
     private void ensureOpen() {
         if (this.status != BountyStatus.OPEN) {
-            throw new BusinessRuleException("RP-3008", "悬赏状态非 OPEN，当前为 " + this.status);
+            throw new BusinessRuleException("REP-3008", "悬赏状态非 OPEN，当前为 " + this.status);
         }
     }
 

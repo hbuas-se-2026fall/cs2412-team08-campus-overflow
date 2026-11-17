@@ -34,7 +34,7 @@ public class ReputationQueryService {
 
     public ReputationProfileView profile(long userId, Actor viewerOrNull) {
         ReputationAccount acc = accounts.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException("RP-4003", "声誉账户不存在"));
+                .orElseThrow(() -> new NotFoundException("REP-4003", "声誉账户不存在"));
         UserSummary user = identity.findUser(userId).orElse(null);
         String displayName = user != null ? user.displayName() : "";
         boolean self = viewerOrNull != null && viewerOrNull.userId() == userId;
@@ -50,7 +50,7 @@ public class ReputationQueryService {
     /** 声誉流水属于个人数据：仅本人与管理员可查看。 */
     public PageResult<LedgerEntryView> ledger(long userId, Actor viewer, PageRequest page) {
         if (viewer.userId() != userId && !viewer.role().name().equals("ADMIN")) {
-            throw new ForbiddenException("RP-4004", "只能查看自己的声誉流水");
+            throw new ForbiddenException("REP-3002", "只能查看自己的声誉流水");
         }
         PageResult<LedgerEntry> entries = ledger.findByUser(userId, page);
         return entries.map(e -> new LedgerEntryView(e.id(), e.reason().name(), e.reason().label(),

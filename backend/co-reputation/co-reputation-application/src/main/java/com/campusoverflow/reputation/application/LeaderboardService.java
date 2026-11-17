@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class LeaderboardService {
 
+    private static final String CONSUMER = "reputation.leaderboard";
+
     private final LeaderboardStore store;
     private final ReputationAccountRepository accounts;
     private final IdentityApi identity;
@@ -36,6 +38,9 @@ public class LeaderboardService {
     @EventListener
     @Transactional
     public void on(ReputationChangedEvent e) {
+        if (!processed.markProcessed(e.eventId(), CONSUMER)) {
+            return;
+        }
         store.increment(e.userId(), e.delta(), e.occurredAt());
     }
 
