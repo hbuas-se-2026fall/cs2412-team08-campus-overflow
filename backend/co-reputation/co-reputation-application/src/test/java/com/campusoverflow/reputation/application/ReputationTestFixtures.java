@@ -1,13 +1,13 @@
 package com.campusoverflow.reputation.application;
 
 import com.campusoverflow.qa.api.QuestionRef;
+import com.campusoverflow.reputation.domain.AcademicTerm;
 import com.campusoverflow.reputation.domain.Bounty;
 import com.campusoverflow.reputation.domain.ReputationAccount;
 import com.campusoverflow.shared.security.Actor;
 import com.campusoverflow.shared.security.Role;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 
 /** 声誉应用层测试共享固件：固定时钟、身份、问题引用、账户与开放悬赏。 */
 final class ReputationTestFixtures {
@@ -18,7 +18,7 @@ final class ReputationTestFixtures {
     }
 
     static Clock clock() {
-        return Clock.fixed(NOW, ZoneOffset.UTC);
+        return Clock.fixed(NOW, AcademicTerm.CAMPUS_ZONE);
     }
 
     static Actor teacher(long userId) {

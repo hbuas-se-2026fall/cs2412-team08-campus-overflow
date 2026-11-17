@@ -90,11 +90,14 @@ public class BountyService {
             closeAndRefund(bounty, sponsor);
             return;
         }
-        bounty.award(answerId, winnerId, clock.instant());
-        if (sponsor != null) {
-            sponsor.spendFrozen(bounty.points());
-            accounts.save(sponsor);
+        if (sponsor == null) {
+            // 发起人账户缺失：无法发放奖励，只关闭悬赏，不凭空产生悬赏积分。
+            closeAndRefund(bounty, null);
+            return;
         }
+        bounty.award(answerId, winnerId, clock.instant());
+        sponsor.spendFrozen(bounty.points());
+        accounts.save(sponsor);
         ledgerService.record(winnerId, sourceEventId, ReputationReason.BOUNTY_AWARDED,
                 bounty.points(), "BOUNTY", bounty.id());
         bounties.save(bounty);

@@ -86,6 +86,21 @@ class BountyServiceTest {
     }
 
     @Test
+    void settle_发起人账户缺失_只关闭不发奖励() {
+        Bounty bounty = ReputationTestFixtures.openBounty(1L, 10L, 9L, 50);
+        when(bounties.findOpenByQuestion(10L)).thenReturn(Optional.of(bounty));
+        when(accounts.findByUserId(9L)).thenReturn(Optional.empty());
+
+        service.settleOnAccept(10L, 50L, 3L, "evt-1");
+
+        verify(ledgerService, never()).record(anyLong(), anyString(), any(), anyInt(), anyString(), anyLong());
+        verify(events).publish(any(BountyClosedEvent.class));
+        verify(events, never()).publish(any(BountyAwardedEvent.class));
+        verify(accounts, never()).save(any());
+        assertThat(bounty.winnerId()).isNull();
+    }
+
+    @Test
     void open_问题已采纳_拒绝发起悬赏() {
         when(qa.findQuestion(10L)).thenReturn(Optional.of(ReputationTestFixtures.question(10L, 99L)));
 

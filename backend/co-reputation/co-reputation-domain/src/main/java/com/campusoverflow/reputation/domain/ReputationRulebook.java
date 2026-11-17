@@ -7,7 +7,7 @@ import com.campusoverflow.shared.security.Role;
  * <ul>
  *   <li>回答被采纳 +15（自问自答被采纳不加分）；</li>
  *   <li>被赞 +10，被踩 −2；改投、撤销按“新效果 − 旧效果”计算增量；</li>
- *   <li>反作弊：每人每个自然日（UTC）因被投票获得的正向声誉最多 200。</li>
+ *   <li>反作弊：每人每个自然日（校园时区 Asia/Shanghai）因被投票获得的正向声誉最多 200。</li>
  * </ul>
  */
 public final class ReputationRulebook {
