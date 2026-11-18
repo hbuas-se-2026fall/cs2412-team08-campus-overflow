@@ -2,9 +2,7 @@ package com.campusoverflow.qa.application.command;
 
 import com.campusoverflow.identity.api.IdentityApi;
 import com.campusoverflow.qa.api.event.AnswerAcceptedEvent;
-import com.campusoverflow.qa.api.event.AnswerEndorsedEvent;
 import com.campusoverflow.qa.api.event.AnswerSubmittedEvent;
-import com.campusoverflow.qa.api.event.ContentDeletedEvent;
 import com.campusoverflow.qa.application.port.QuestionListCache;
 import com.campusoverflow.qa.domain.Answer;
 import com.campusoverflow.qa.domain.AnswerRepository;
@@ -46,8 +44,22 @@ public class AnswerCommandService {
 
     @Transactional
     public long submit(Actor actor, long questionId, String body) {
-        // TODO(S2)：实现 AnswerCommandService.submit——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S2)：AnswerCommandService.submit 尚未实现");
+        Question question = load(questionId);
+        MarkdownBody markdown = MarkdownBody.ofAnswer(body);
+        Answer answer = Answer.submit(question, actor.userId(), markdown, clock.instant());
+        Answer saved = answers.save(answer);
+        questions.adjustAnswerCount(questionId, 1);
+        events.publish(new AnswerSubmittedEvent(EventIds.next(), clock.instant(), saved.id(), questionId,
+                actor.userId(), question.authorId(), question.title().value()));
+        listCache.invalidateAll();
+        audit.record("ANSWER_SUBMITTED", actor.userId(), "ANSWER", String.valueOf(saved.id()), null);
+        return saved.id();
+    }
+
+    private Question load(long questionId) {
+        return questions.findById(questionId)
+                .filter(q -> !q.isDeleted())
+                .orElseThrow(() -> new NotFoundException("QA-4001", "问题不存在或已删除"));
     }
 
     @Transactional
