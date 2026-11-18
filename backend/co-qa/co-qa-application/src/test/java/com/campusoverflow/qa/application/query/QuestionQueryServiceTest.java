@@ -172,6 +172,21 @@ class QuestionQueryServiceTest {
                 .isInstanceOf(NotFoundException.class);
     }
 
+    @Test
+    @DisplayName("详情：回答按已采纳优先、得分降序、时间升序排列")
+    void detailOrdersAnswers() {
+        readModel.question = new QuestionRow(7, 1, 100L, "标题", "正文", List.of(), 9L, 3, 1, 5, NOW, NOW);
+        readModel.answers = List.of(
+                new AnswerRow(10, 2, "高分较晚", 8, null, NOW.plusSeconds(5), NOW.plusSeconds(5)),
+                new AnswerRow(9, 2, "采纳但得分低", 1, null, NOW, NOW),
+                new AnswerRow(11, 2, "高分较早", 8, null, NOW, NOW));
+        readModel.comments = List.of();
+
+        QuestionDetailView view = queryService.detail(7, new Actor(2, "小红", Role.STUDENT));
+
+        assertThat(view.answers()).extracting(AnswerView::id).containsExactly(9L, 11L, 10L);
+    }
+
     private static QuestionRow row(long id, long authorId, String title, List<String> tags, Long acceptedAnswerId) {
         return new QuestionRow(id, authorId, 100L, title, title, tags, acceptedAnswerId, 5, 2, 3, NOW, NOW);
     }

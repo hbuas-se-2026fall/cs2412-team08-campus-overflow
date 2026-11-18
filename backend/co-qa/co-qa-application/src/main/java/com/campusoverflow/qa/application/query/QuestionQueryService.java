@@ -18,10 +18,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,7 +63,7 @@ public class QuestionQueryService {
         QuestionRow question = readModel.findQuestion(questionId)
                 .orElseThrow(() -> new NotFoundException("QA-4001", "问题不存在或已删除"));
         viewCounter.increment(questionId);
-        List<AnswerRow> answerRows = readModel.findAnswers(questionId);
+        List<AnswerRow> answerRows = orderedAnswers(readModel.findAnswers(questionId), question.acceptedAnswerId());
         List<CommentRow> commentRows = readModel.findComments(questionId);
         long viewerId = actorOrNull == null ? 0L : actorOrNull.userId();
         Map<String, Integer> votes = viewerId == 0L
@@ -144,6 +142,14 @@ public class QuestionQueryService {
         }
         grouped.put(QUESTION_KEY, onQuestion);
         return grouped;
+    }
+
+    private static List<AnswerRow> orderedAnswers(List<AnswerRow> rows, Long acceptedId) {
+        return rows.stream()
+                .sorted(Comparator.comparing((AnswerRow row) -> acceptedId != null && acceptedId == row.id() ? 0 : 1)
+                        .thenComparing(Comparator.comparingInt(AnswerRow::score).reversed())
+                        .thenComparing(AnswerRow::createdAt))
+                .toList();
     }
 
     private List<AnswerView> answerViews(QuestionRow question, List<AnswerRow> rows,
