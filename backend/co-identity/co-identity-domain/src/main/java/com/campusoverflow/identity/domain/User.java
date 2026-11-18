@@ -25,8 +25,8 @@ public class User {
 
     private Long id;
     private final String username;
-    private final String displayName;
-    private final String email;
+    private String displayName;
+    private String email;
     private final String passwordHash;
     private Role role;
     private UserStatus status;
@@ -103,6 +103,18 @@ public class User {
             throw new BusinessRuleException("ID-1007", "不能禁用自己的账号");
         }
         this.status = UserStatus.DISABLED;
+    }
+
+    /** 用户更新自己的公开资料（昵称、邮箱）。username 与 college/className 不可自助修改。 */
+    public void updateProfile(Actor actor, String newDisplayName, String newEmail) {
+        if (!actor.is(requireId())) {
+            throw new ForbiddenException("ID-3002", "只能修改自己的资料");
+        }
+        if (this.status == UserStatus.DISABLED) {
+            throw new BusinessRuleException("ID-1008", "账号已禁用，无法修改资料");
+        }
+        this.displayName = checkDisplayName(newDisplayName);
+        this.email = checkEmail(newEmail);
     }
 
     public boolean canLogin() {

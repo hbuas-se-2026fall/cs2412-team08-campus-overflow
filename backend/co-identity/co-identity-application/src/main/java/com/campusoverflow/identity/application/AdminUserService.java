@@ -17,6 +17,7 @@ import com.campusoverflow.shared.security.Actor;
 import com.campusoverflow.shared.security.Role;
 import com.campusoverflow.shared.util.Masking;
 import java.time.Clock;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,14 +30,17 @@ public class AdminUserService {
     private final IntegrationEventPublisher events;
     private final AuditTrail audit;
     private final Clock clock;
+    private final ObjectProvider<UserSessionTerminator> sessionTerminatorProvider;
 
     public AdminUserService(UserRepository users, PasswordHasher hasher, IntegrationEventPublisher events,
-                            AuditTrail audit, Clock clock) {
+                            AuditTrail audit, Clock clock,
+                            ObjectProvider<UserSessionTerminator> sessionTerminatorProvider) {
         this.users = users;
         this.hasher = hasher;
         this.events = events;
         this.audit = audit;
         this.clock = clock;
+        this.sessionTerminatorProvider = sessionTerminatorProvider;
     }
 
     @Transactional(readOnly = true)
@@ -77,6 +81,24 @@ public class AdminUserService {
         user.changeRole(actor, role);
         users.save(user);
         audit.record("ROLE_CHANGED", actor.userId(), "USER", String.valueOf(userId), old + " -> " + role);
+    }
+
+    @Transactional
+    public void disable(Actor actor, long userId) {
+        User user = load(userId);
+        user.disable(actor);
+        users.save(user);
+        // 即时下线：删除该用户全部服务端会话，不等 Cookie 过期（ADR-003 / T4-02）
+        // 用 ObjectProvider 延迟查找，Spring Session 未配置时不影响应用启动
+        UserSessionTerminator terminator = sessionTerminatorProvider.getIfAvailable();
+        String sessionNote;
+        if (terminator != null) {
+            terminator.terminateAll(user.username());
+            sessionNote = "session invalidated for " + Masking.account(user.username());
+        } else {
+            sessionNote = "no session terminator configured; offline deferred for " + Masking.account(user.username());
+        }
+        audit.record("USER_DISABLED", actor.userId(), "USER", String.valueOf(userId), sessionNote);
     }
 
     private User load(long userId) {
