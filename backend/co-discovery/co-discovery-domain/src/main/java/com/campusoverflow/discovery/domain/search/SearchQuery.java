@@ -37,12 +37,22 @@ public record SearchQuery(String keyword, Long courseId, String tag, SearchSort 
     }
 
     public List<String> terms() {
-        // TODO(S3)：实现 SearchQuery.terms——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：SearchQuery.terms 尚未实现");
+        return keyword == null ? List.of() : terms(keyword);
     }
 
+    /**
+     * 按空白切词并统一小写，去重后最多保留 5 个词项。
+     * 全文检索运算符已在构造器中被替换为空白，因此这里拿到的都是纯词项。
+     */
     private static List<String> terms(String keyword) {
-        // TODO(S3)：实现 SearchQuery.terms——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：SearchQuery.terms 尚未实现");
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(keyword.split("\\s+"))
+                .map(term -> term.toLowerCase(Locale.ROOT))
+                .filter(term -> !term.isEmpty())
+                .distinct()
+                .limit(MAX_TERMS)
+                .toList();
     }
 }

@@ -1,5 +1,6 @@
 package com.campusoverflow.discovery.domain.notification;
 
+import com.campusoverflow.shared.domain.BusinessRuleException;
 import com.campusoverflow.shared.domain.ForbiddenException;
 import java.time.Instant;
 import java.util.Objects;
@@ -28,10 +29,28 @@ public class Notification {
         this.createdAt = createdAt;
     }
 
+    public static final int MAX_TITLE_LENGTH = 120;
+
     public static Notification create(long recipientId, NotificationType type, String title, String link,
                                       String sourceEventId, Instant now) {
-        // TODO(S3)：实现 Notification.create——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：Notification.create 尚未实现");
+        if (recipientId <= 0) {
+            throw new BusinessRuleException("DIS-3001", "通知接收人不能为空");
+        }
+        Objects.requireNonNull(type, "通知类型不能为空");
+        if (title == null || title.isBlank()) {
+            throw new BusinessRuleException("DIS-3002", "通知标题不能为空");
+        }
+        String normalizedTitle = title.strip();
+        if (normalizedTitle.length() > MAX_TITLE_LENGTH) {
+            throw new BusinessRuleException("DIS-3002", "通知标题不能超过 " + MAX_TITLE_LENGTH + " 个字符");
+        }
+        String normalizedLink = link == null || link.isBlank() ? null : link.strip();
+        if (sourceEventId == null || sourceEventId.isBlank()) {
+            throw new BusinessRuleException("DIS-3003", "通知必须记录来源事件标识");
+        }
+        Objects.requireNonNull(now, "通知创建时间不能为空");
+        return new Notification(null, recipientId, type, normalizedTitle, normalizedLink, sourceEventId.strip(),
+                false, now);
     }
 
     public static Notification reconstitute(Long id, long recipientId, NotificationType type, String title,
@@ -39,9 +58,12 @@ public class Notification {
         return new Notification(id, recipientId, type, title, link, sourceEventId, read, createdAt);
     }
 
+    /** 只有接收人可以标记已读；重复标记是幂等的。 */
     public void markRead(long actorId) {
-        // TODO(S3)：实现 Notification.markRead——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：Notification.markRead 尚未实现");
+        if (actorId != recipientId) {
+            throw new ForbiddenException("DIS-3004", "只有通知接收人可以标记为已读");
+        }
+        this.read = true;
     }
 
     public void assignId(long id) {
