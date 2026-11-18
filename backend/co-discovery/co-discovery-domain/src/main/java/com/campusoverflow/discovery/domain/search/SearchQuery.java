@@ -2,9 +2,10 @@ package com.campusoverflow.discovery.domain.search;
 
 import com.campusoverflow.shared.domain.BusinessRuleException;
 import com.campusoverflow.shared.page.PageRequest;
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * 搜索条件（值对象）。关键词规范化：去除全文检索运算符，按空白切分为词项，最多 5 个。
@@ -44,9 +45,12 @@ public record SearchQuery(String keyword, Long courseId, String tag, SearchSort 
         if (keyword == null || keyword.isBlank()) {
             return List.of();
         }
-        return Arrays.stream(keyword.strip().split("\\s+"))
-                .filter(t -> !t.isEmpty())
-                .limit(MAX_TERMS)
-                .toList();
+        Set<String> unique = new LinkedHashSet<>();
+        for (String term : keyword.strip().split("\\s+")) {
+            if (!term.isEmpty() && unique.size() < MAX_TERMS) {
+                unique.add(term);
+            }
+        }
+        return List.copyOf(unique);
     }
 }

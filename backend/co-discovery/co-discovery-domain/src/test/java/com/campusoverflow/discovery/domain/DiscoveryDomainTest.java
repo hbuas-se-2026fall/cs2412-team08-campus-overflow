@@ -55,6 +55,19 @@ class DiscoveryDomainTest {
     }
 
     @Test
+    void duplicateTermsAreDeduplicatedBeforeTheCap() {
+        SearchQuery q = new SearchQuery("abc abc def def ghi abc jkl mno", null, null, null, false, false, null);
+        assertThat(q.terms()).containsExactly("abc", "def", "ghi", "jkl", "mno");
+    }
+
+    @Test
+    void notificationTitleIsTruncatedTo200Characters() {
+        Notification n = Notification.create(7, NotificationType.ANSWER_RECEIVED, "长".repeat(250), "/questions/2",
+                "evt-2", Instant.now());
+        assertThat(n.title()).hasSize(200);
+    }
+
+    @Test
     void onlyRecipientCanMarkNotificationRead() {
         Notification n = Notification.create(7, NotificationType.ANSWER_RECEIVED, "你的问题收到新回答", "/questions/1",
                 "evt-1", Instant.now());

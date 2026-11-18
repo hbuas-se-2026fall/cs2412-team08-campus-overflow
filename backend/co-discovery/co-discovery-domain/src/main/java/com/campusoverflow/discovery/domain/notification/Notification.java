@@ -37,7 +37,8 @@ public class Notification {
         if (title == null || title.isBlank()) {
             throw new BusinessRuleException("DIS-1004", "通知标题不能为空");
         }
-        return new Notification(null, recipientId, type, title, link, sourceEventId, false,
+        String normalized = title.length() > 200 ? title.substring(0, 200) : title;
+        return new Notification(null, recipientId, type, normalized, link, sourceEventId, false,
                 now == null ? Instant.now() : now);
     }
 
