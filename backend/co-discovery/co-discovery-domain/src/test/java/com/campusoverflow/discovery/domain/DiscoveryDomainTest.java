@@ -61,6 +61,17 @@ class DiscoveryDomainTest {
     }
 
     @Test
+    void notificationRequiresSourceEventId() {
+        assertThatThrownBy(() -> Notification.create(7, NotificationType.ANSWER_RECEIVED, "标题", "/questions/1",
+                null, Instant.now()))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> Notification.create(7, NotificationType.ANSWER_RECEIVED, "标题", "/questions/1",
+                "   ", Instant.now()))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("来源事件标识");
+    }
+
+    @Test
     void notificationTitleIsTruncatedTo200Characters() {
         Notification n = Notification.create(7, NotificationType.ANSWER_RECEIVED, "长".repeat(250), "/questions/2",
                 "evt-2", Instant.now());
