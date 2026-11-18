@@ -1,5 +1,6 @@
 package com.campusoverflow.discovery.domain.notification;
 
+import com.campusoverflow.shared.domain.BusinessRuleException;
 import com.campusoverflow.shared.domain.ForbiddenException;
 import java.time.Instant;
 import java.util.Objects;
@@ -30,8 +31,18 @@ public class Notification {
 
     public static Notification create(long recipientId, NotificationType type, String title, String link,
                                       String sourceEventId, Instant now) {
-        // TODO(S3)：实现 Notification.create——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：Notification.create 尚未实现");
+        if (recipientId <= 0) {
+            throw new BusinessRuleException("DIS-1003", "通知收件人无效");
+        }
+        if (title == null || title.isBlank()) {
+            throw new BusinessRuleException("DIS-1004", "通知标题不能为空");
+        }
+        if (sourceEventId == null || sourceEventId.isBlank()) {
+            throw new BusinessRuleException("DIS-1005", "通知来源事件标识不能为空");
+        }
+        String normalized = title.length() > 200 ? title.substring(0, 200) : title;
+        return new Notification(null, recipientId, type, normalized, link, sourceEventId, false,
+                now == null ? Instant.now() : now);
     }
 
     public static Notification reconstitute(Long id, long recipientId, NotificationType type, String title,
@@ -40,8 +51,10 @@ public class Notification {
     }
 
     public void markRead(long actorId) {
-        // TODO(S3)：实现 Notification.markRead——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：Notification.markRead 尚未实现");
+        if (actorId != recipientId) {
+            throw new ForbiddenException("DIS-3001", "只能标记自己的通知");
+        }
+        this.read = true;
     }
 
     public void assignId(long id) {

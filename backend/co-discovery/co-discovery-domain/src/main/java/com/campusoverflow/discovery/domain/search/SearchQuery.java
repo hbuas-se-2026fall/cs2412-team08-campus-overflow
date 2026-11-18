@@ -2,9 +2,10 @@ package com.campusoverflow.discovery.domain.search;
 
 import com.campusoverflow.shared.domain.BusinessRuleException;
 import com.campusoverflow.shared.page.PageRequest;
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * 搜索条件（值对象）。关键词规范化：去除全文检索运算符，按空白切分为词项，最多 5 个。
@@ -37,12 +38,19 @@ public record SearchQuery(String keyword, Long courseId, String tag, SearchSort 
     }
 
     public List<String> terms() {
-        // TODO(S3)：实现 SearchQuery.terms——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：SearchQuery.terms 尚未实现");
+        return terms(keyword);
     }
 
     private static List<String> terms(String keyword) {
-        // TODO(S3)：实现 SearchQuery.terms——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：SearchQuery.terms 尚未实现");
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+        Set<String> unique = new LinkedHashSet<>();
+        for (String term : keyword.strip().split("\\s+")) {
+            if (!term.isEmpty() && unique.size() < MAX_TERMS) {
+                unique.add(term);
+            }
+        }
+        return List.copyOf(unique);
     }
 }
