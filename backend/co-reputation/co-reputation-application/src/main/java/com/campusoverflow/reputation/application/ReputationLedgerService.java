@@ -50,6 +50,10 @@ public class ReputationLedgerService {
         events.publish(new ReputationChangedEvent(EventIds.next(), clock.instant(), userId, delta,
                 account.reputation(), reason.name()));
         BadgePolicy.forReputation(account.reputation()).forEach(b -> badges.grant(userId, b));
+        if (reason == ReputationReason.ANSWER_ACCEPTED) {
+            long acceptedCount = ledger.countByUserAndReason(userId, reason);
+            BadgePolicy.forAcceptedCount(acceptedCount).forEach(b -> badges.grant(userId, b));
+        }
         return true;
     }
 }

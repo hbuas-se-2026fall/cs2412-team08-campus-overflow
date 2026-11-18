@@ -2,6 +2,7 @@ package com.campusoverflow.reputation.domain;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.IsoFields;
 
@@ -16,17 +17,27 @@ public final class AcademicTerm {
     }
 
     public static String termKey(Instant at) {
-        // TODO(S3)：实现 AcademicTerm.termKey——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：AcademicTerm.termKey 尚未实现");
+        LocalDate d = at.atZone(CAMPUS_ZONE).toLocalDate();
+        int m = d.getMonthValue();
+        int y = d.getYear();
+        if (m >= 2 && m <= 7) {
+            return y + "-SPRING";
+        } else if (m >= 8) {
+            return y + "-FALL";
+        } else { // m == 1，属于上一年秋季学期
+            return (y - 1) + "-FALL";
+        }
     }
 
     public static String weekKey(Instant at) {
-        // TODO(S3)：实现 AcademicTerm.weekKey——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：AcademicTerm.weekKey 尚未实现");
+        LocalDate d = at.atZone(CAMPUS_ZONE).toLocalDate();
+        int week = d.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        int year = d.get(IsoFields.WEEK_BASED_YEAR);
+        return year + "-W" + String.format("%02d", week);
     }
 
     public static String monthKey(Instant at) {
-        // TODO(S3)：实现 AcademicTerm.monthKey——参考领域单元测试与 arc42 文档中的业务规则
-        throw new UnsupportedOperationException("TODO(S3)：AcademicTerm.monthKey 尚未实现");
+        YearMonth ym = YearMonth.from(at.atZone(CAMPUS_ZONE));
+        return String.format("%d-%02d", ym.getYear(), ym.getMonthValue());
     }
 }

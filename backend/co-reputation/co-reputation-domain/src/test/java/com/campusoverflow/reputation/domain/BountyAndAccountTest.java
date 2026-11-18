@@ -21,6 +21,8 @@ class BountyAndAccountTest {
     void onlyCourseManagerCanOpenBountyWithinLimits() {
         assertThatThrownBy(() -> Bounty.open(10, true, new Actor(1, "学生", Role.STUDENT), false, 50, 7, NOW))
                 .isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> Bounty.open(10, true, teacher, false, 50, 7, NOW))
+                .isInstanceOf(ForbiddenException.class);
         assertThatThrownBy(() -> Bounty.open(10, true, teacher, true, 5, 7, NOW))
                 .isInstanceOf(BusinessRuleException.class);
         assertThatThrownBy(() -> Bounty.open(10, false, teacher, true, 50, 7, NOW))
