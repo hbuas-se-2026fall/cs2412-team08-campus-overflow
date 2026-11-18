@@ -1,6 +1,7 @@
 package com.campusoverflow.qa.application.command;
 
 import com.campusoverflow.identity.api.IdentityApi;
+import com.campusoverflow.qa.api.event.AnswerAcceptedEvent;
 import com.campusoverflow.qa.api.event.AnswerSubmittedEvent;
 import com.campusoverflow.qa.application.port.QuestionListCache;
 import com.campusoverflow.qa.domain.Answer;
