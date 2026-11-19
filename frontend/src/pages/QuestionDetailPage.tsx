@@ -2,14 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
-import type { QuestionDetail } from '../types';
+import type { QuestionDetail, RelatedQuestion } from '../types';
 
 export function QuestionDetailPage() {
   const { id } = useParams();
   const questionId = Number(id);
   const { me } = useAuth();
   const [q, setQ] = useState<QuestionDetail | null>(null);
-  const [related, setRelated] = useState<{ id: number; title: string }[]>([]);
+  const [related, setRelated] = useState<RelatedQuestion[]>([]);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
 
@@ -102,7 +102,15 @@ export function QuestionDetailPage() {
       <aside>
         <h3>相关问题</h3>
         <ul className="plain">
-          {related.map((r) => <li key={r.id}><Link to={`/questions/${r.id}`}>{r.title}</Link></li>)}
+          {related.map((r) => (
+            <li key={r.id}>
+              <Link to={`/questions/${r.id}`}>{r.title}</Link>
+              <span className="muted sim">
+                · {r.answerCount} 回答 · 相似度 {(r.similarity * 100).toFixed(0)}%
+                {r.accepted && <span className="check-mark"> ✔</span>}
+              </span>
+            </li>
+          ))}
           {related.length === 0 && <li className="muted">暂无</li>}
         </ul>
       </aside>
@@ -123,7 +131,7 @@ function CommentList({ comments, targetType, targetId, onDone, canComment }: {
     <div className="comments">
       {comments.map((c) => (
         <div className="comment" key={c.id}>
-          <span>{c.body}</span>
+          <span><MentionText text={c.body} /></span>
           <span className="muted"> — {c.author.displayName}</span>
         </div>
       ))}
@@ -136,5 +144,22 @@ function CommentList({ comments, targetType, targetId, onDone, canComment }: {
         </div>
       ) : <button className="link" onClick={() => setOpen(true)}>添加评论</button>)}
     </div>
+  );
+}
+
+/**
+ * 评论正文中的 @昵称 高亮。
+ * 评论 body 是纯文本（后端不渲染 HTML），这里按片段拆成 React 元素，不用 innerHTML，天然免疫注入。
+ */
+const MENTION_PATTERN = /(@[\w\u4e00-\u9fa5]{2,20})/g;
+
+function MentionText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(MENTION_PATTERN).map((part, index) =>
+        part.startsWith('@')
+          ? <span className="mention" key={index}>{part}</span>
+          : <span key={index}>{part}</span>)}
+    </>
   );
 }
