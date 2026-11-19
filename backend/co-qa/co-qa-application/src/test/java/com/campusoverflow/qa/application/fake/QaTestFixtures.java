@@ -207,19 +207,28 @@ public final class QaTestFixtures {
 
     public static class CountingCache implements QuestionListCache {
         public int invalidations;
+        public int puts;
+        private final Map<String, PageResult<QuestionSummaryView>> store = new HashMap<>();
+
+        private static String key(Long courseId, PageRequest page) {
+            return courseId + ":" + page.page() + ":" + page.size();
+        }
 
         @Override
         public Optional<PageResult<QuestionSummaryView>> get(Long courseId, PageRequest page) {
-            return Optional.empty();
+            return Optional.ofNullable(store.get(key(courseId, page)));
         }
 
         @Override
         public void put(Long courseId, PageRequest page, PageResult<QuestionSummaryView> value) {
+            puts++;
+            store.put(key(courseId, page), value);
         }
 
         @Override
         public void invalidateAll() {
             invalidations++;
+            store.clear();
         }
     }
 
@@ -236,8 +245,11 @@ public final class QaTestFixtures {
     }
 
     public static class StubViewCounter implements ViewCounter {
+        public final List<Long> incremented = new ArrayList<>();
+
         @Override
         public void increment(long questionId) {
+            incremented.add(questionId);
         }
     }
 
@@ -250,34 +262,39 @@ public final class QaTestFixtures {
         }
     }
 
-    /** 读模型内存替身：仅记录热门标签入参，其余读路径返回空。 */
+    /** 读模型内存替身：默认空数据，测试按需注入问题、回答、评论与投票。 */
     public static class InMemoryReadModel implements QaReadModel {
         public int lastPopularLimit = -1;
         public List<TagView> tags = List.of();
+        public PageResult<QuestionRow> questions = PageResult.empty(1, 10);
+        public QuestionRow question;
+        public List<AnswerRow> answers = List.of();
+        public List<CommentRow> comments = List.of();
+        public Map<String, Integer> votes = Map.of();
 
         @Override
         public PageResult<QuestionRow> listQuestions(Long courseId, PageRequest page) {
-            return PageResult.empty(page.page(), page.size());
+            return questions;
         }
 
         @Override
         public Optional<QuestionRow> findQuestion(long questionId) {
-            return Optional.empty();
+            return Optional.ofNullable(question);
         }
 
         @Override
         public List<AnswerRow> findAnswers(long questionId) {
-            return List.of();
+            return answers;
         }
 
         @Override
         public List<CommentRow> findComments(long questionId) {
-            return List.of();
+            return comments;
         }
 
         @Override
         public Map<String, Integer> findMyVotes(long voterId, long questionId, Collection<Long> answerIds) {
-            return Map.of();
+            return votes;
         }
 
         @Override
