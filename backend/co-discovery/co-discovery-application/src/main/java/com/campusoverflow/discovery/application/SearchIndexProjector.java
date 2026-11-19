@@ -27,6 +27,7 @@ public class SearchIndexProjector {
 
     static final String CONSUMER = "discovery.search-index";
     private static final String TARGET_QUESTION = "QUESTION";
+    private static final String TARGET_ANSWER = "ANSWER";
 
     private final SearchIndex index;
     private final ProcessedEventStore processed;
@@ -81,6 +82,9 @@ public class SearchIndexProjector {
         }
         if (TARGET_QUESTION.equals(e.targetType())) {
             index.markDeleted(e.questionId());
+        } else if (TARGET_ANSWER.equals(e.targetType())) {
+            // 回答被删：问题上该回答仍占着 answer_count，删除后必须回落，否则展示数虚高
+            index.adjustAnswerCount(e.questionId(), -1, e.occurredAt());
         }
     }
 
@@ -102,6 +106,7 @@ public class SearchIndexProjector {
         if (TARGET_QUESTION.equals(e.targetType())) {
             index.adjustScore(e.questionId(), e.newValue() - e.oldValue());
         }
+        // ANSWER 投票有意静默：搜索索引是问题级文档，回答得票不影响问题的排序得分
     }
 
     @EventListener

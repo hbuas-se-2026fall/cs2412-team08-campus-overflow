@@ -8,6 +8,7 @@ import com.campusoverflow.discovery.domain.search.SearchQuery;
 import com.campusoverflow.identity.api.CourseSummary;
 import com.campusoverflow.identity.api.IdentityApi;
 import com.campusoverflow.identity.api.UserSummary;
+import com.campusoverflow.qa.api.event.AnswerAcceptedEvent;
 import com.campusoverflow.qa.api.event.AnswerSubmittedEvent;
 import com.campusoverflow.qa.api.event.ContentDeletedEvent;
 import com.campusoverflow.qa.api.event.QuestionEditedEvent;
@@ -71,6 +72,17 @@ class DiscoveryApplicationTest {
     }
 
     @Test
+    void questionEditedDuplicateDeliveryIsIgnored() {
+        FakeIndex index = new FakeIndex();
+        SearchIndexProjector projector = new SearchIndexProjector(index, new FakeStore());
+
+        projector.on(new QuestionEditedEvent("evt-2", NOW, 10L, "新标题", "新正文", List.of("java")));
+        projector.on(new QuestionEditedEvent("evt-2", NOW, 10L, "新标题", "新正文", List.of("java")));
+
+        assertThat(index.updated).hasSize(1);
+    }
+
+    @Test
     void answerSubmittedIncrementsAnswerCountOncePerEvent() {
         FakeIndex index = new FakeIndex();
         SearchIndexProjector projector = new SearchIndexProjector(index, new FakeStore());
@@ -94,14 +106,27 @@ class DiscoveryApplicationTest {
     }
 
     @Test
-    void contentDeletedOnlyMarksQuestions() {
+    void contentDeletedMarksQuestionAndDecrementsAnswerCount() {
         FakeIndex index = new FakeIndex();
         SearchIndexProjector projector = new SearchIndexProjector(index, new FakeStore());
 
         projector.on(new ContentDeletedEvent("evt-6", NOW, "QUESTION", 10L, 10L));
         projector.on(new ContentDeletedEvent("evt-7", NOW, "ANSWER", 20L, 10L));
 
+        // 问题被删 → 标删除；回答被删 → 所属问题的答案数回落 1
         assertThat(index.deleted).containsExactly(10L);
+        assertThat(index.answerCountCalls).containsExactly(-1);
+    }
+
+    @Test
+    void answerAcceptedMarksAcceptedQuestionOnce() {
+        FakeIndex index = new FakeIndex();
+        SearchIndexProjector projector = new SearchIndexProjector(index, new FakeStore());
+
+        projector.on(new AnswerAcceptedEvent("evt-11", NOW, 20L, 10L, 4L, 3L, 3L, "标题"));
+        projector.on(new AnswerAcceptedEvent("evt-11", NOW, 20L, 10L, 4L, 3L, 3L, "标题"));
+
+        assertThat(index.acceptedQuestions).containsExactly(10L);
     }
 
     @Test
@@ -205,6 +230,7 @@ class DiscoveryApplicationTest {
         final List<List<String>> updated = new ArrayList<>();
         final List<Integer> answerCountCalls = new ArrayList<>();
         final List<Integer> scoreDeltas = new ArrayList<>();
+        final List<Long> acceptedQuestions = new ArrayList<>();
         final List<Long> deleted = new ArrayList<>();
         final List<Boolean> bountyFlags = new ArrayList<>();
         List<String> tags = List.of("java");
@@ -234,6 +260,7 @@ class DiscoveryApplicationTest {
 
         @Override
         public void markAccepted(long questionId, Instant at) {
+            acceptedQuestions.add(questionId);
         }
 
         @Override
