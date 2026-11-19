@@ -151,7 +151,7 @@ function CommentList({ comments, targetType, targetId, onDone, canComment }: {
  * 评论正文中的 @昵称 高亮。
  * 评论 body 是纯文本（后端不渲染 HTML），这里按片段拆成 React 元素，不用 innerHTML，天然免疫注入。
  */
-const MENTION_PATTERN = /(@[\w\u4e00-\u9fa5.-]+)/g;
+const MENTION_PATTERN = /(@[\w\u4e00-\u9fa5]{2,20})/g;
 
 function MentionText({ text }: { text: string }) {
   return (

@@ -63,7 +63,7 @@ export function QuestionListPage() {
               <div className="stats">
                 <span><b>{q.score}</b> 票</span>
                 <span className={q.accepted ? 'accepted' : ''}><b>{q.answerCount}</b> 回答</span>
-                <span>{'viewCount' in q ? (q.viewCount ?? 0) : 0} 浏览</span>
+                {'viewCount' in q && q.viewCount !== undefined && <span>{q.viewCount} 浏览</span>}
               </div>
               <div className="qmain">
                 <Link className="qtitle" to={`/questions/${q.id}`}>{q.title}</Link>
