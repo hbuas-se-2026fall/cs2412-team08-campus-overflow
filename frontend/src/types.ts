@@ -11,7 +11,7 @@ export interface Me {
 
 export interface QuestionSummary {
   id: number; title: string; excerpt: string; tags: string[]; courseId?: number;
-  author: Author; score: number; answerCount: number; viewCount: number; accepted: boolean; createdAt: string;
+  author: Author; score: number; answerCount: number; viewCount?: number; accepted: boolean; createdAt: string;
 }
 
 export interface Comment { id: number; author: Author; parentId?: number; body: string; createdAt: string }
@@ -30,7 +30,16 @@ export interface QuestionDetail {
   comments: Comment[]; answers: Answer[];
 }
 
-export interface SearchResult extends QuestionSummary { bountyOpen: boolean }
+/** 搜索结果（对应后端 SearchResultView）：与 QuestionSummary 的差别是没有 viewCount，多了 bountyOpen。 */
+export interface SearchResult {
+  id: number; title: string; excerpt: string; tags: string[]; courseId?: number;
+  author: Author; score: number; answerCount: number; accepted: boolean; bountyOpen: boolean; createdAt: string;
+}
+
+/** 相关问题（对应后端 RelatedQuestionView），similarity 为标签 Jaccard 相似度 0~1。 */
+export interface RelatedQuestion {
+  id: number; title: string; answerCount: number; accepted: boolean; similarity: number;
+}
 export interface LeaderboardEntry { rank: number; userId: number; displayName: string; verified: boolean; score: number }
 export interface Notification { id: number; type: string; title: string; link: string; read: boolean; createdAt: string }
 export interface ReputationProfile {

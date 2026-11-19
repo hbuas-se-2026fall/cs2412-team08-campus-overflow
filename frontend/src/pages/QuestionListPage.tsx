@@ -12,6 +12,7 @@ export function QuestionListPage() {
   const [activeTag, setActiveTag] = useState<string | undefined>();
   const [sort, setSort] = useState('newest');
   const [unanswered, setUnanswered] = useState(false);
+  const [bounty, setBounty] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -19,12 +20,12 @@ export function QuestionListPage() {
   }, []);
 
   useEffect(() => {
-    const searching = keyword.trim() !== '' || activeTag || unanswered || sort !== 'newest';
+    const searching = keyword.trim() !== '' || activeTag || unanswered || bounty || sort !== 'newest';
     const promise = searching
-      ? api.search(keyword.trim(), { tag: activeTag, sort, unanswered })
+      ? api.search(keyword.trim(), { tag: activeTag, sort, unanswered, bounty })
       : api.questions(1);
     promise.then((r) => { setData(r); setError(''); }).catch((e) => setError(e.message));
-  }, [keyword, activeTag, sort, unanswered]);
+  }, [keyword, activeTag, sort, unanswered, bounty]);
 
   return (
     <div className="layout">
@@ -42,6 +43,10 @@ export function QuestionListPage() {
             <input type="checkbox" checked={unanswered} onChange={(e) => setUnanswered(e.target.checked)} />
             仅看未回答
           </label>
+          <label className="check">
+            <input type="checkbox" checked={bounty} onChange={(e) => setBounty(e.target.checked)} />
+            仅看悬赏
+          </label>
           {me && <Link className="primary" to="/ask">我要提问</Link>}
         </div>
 
@@ -58,12 +63,13 @@ export function QuestionListPage() {
               <div className="stats">
                 <span><b>{q.score}</b> 票</span>
                 <span className={q.accepted ? 'accepted' : ''}><b>{q.answerCount}</b> 回答</span>
-                <span>{q.viewCount} 浏览</span>
+                <span>{'viewCount' in q ? (q.viewCount ?? 0) : 0} 浏览</span>
               </div>
               <div className="qmain">
                 <Link className="qtitle" to={`/questions/${q.id}`}>{q.title}</Link>
                 <p className="excerpt">{q.excerpt}</p>
                 <div className="tagrow">
+                  {'bountyOpen' in q && q.bountyOpen && <span className="bounty">悬赏</span>}
                   {q.tags.map((t) => <button key={t} className="tag" onClick={() => setActiveTag(t)}>{t}</button>)}
                   <span className="muted">
                     {q.author.displayName} · {new Date(q.createdAt).toLocaleString('zh-CN')}

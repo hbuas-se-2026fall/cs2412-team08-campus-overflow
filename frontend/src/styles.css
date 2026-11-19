@@ -71,3 +71,19 @@ article h1 { font-size: 24px; margin-bottom: 4px; }
 .plain li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .muted { color: var(--muted); }
 .error { color: var(--danger); }
+
+/* 悬赏标记：搜索结果里表示该问题正在悬赏 */
+.bounty { background: #fff4e5; color: #b95f00; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+
+/* 相关问题侧栏的相似度等附加信息 */
+.sim { font-size: 12px; margin-left: 4px; }
+
+/* 评论里的 @昵称 高亮 */
+.mention { color: var(--brand); font-weight: 600; }
+
+/* 通知条目：未读加圆点，右侧放单条已读按钮 */
+.notif-item { display: flex; align-items: center; gap: 6px; }
+.notif-item.unread { font-weight: 600; }
+.notif-item .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); flex: none; }
+.notif-item .mark-read { margin-left: auto; font-size: 12px; }
+
