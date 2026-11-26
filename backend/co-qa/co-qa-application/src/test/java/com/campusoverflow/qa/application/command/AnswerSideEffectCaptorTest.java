@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.campusoverflow.qa.api.event.AnswerAcceptedEvent;
 import com.campusoverflow.qa.api.event.AnswerEndorsedEvent;
@@ -90,6 +91,7 @@ class AnswerSideEffectCaptorTest {
         assertThat(targetId.getValue()).isEqualTo(String.valueOf(answerId));
         assertThat(detail.getValue()).isNull();
         assertThat(cache.invalidations).isEqualTo(1);
+        verifyNoMoreInteractions(publisher, audit);
     }
 
     @Test
@@ -123,11 +125,12 @@ class AnswerSideEffectCaptorTest {
         assertThat(targetId.getValue()).isEqualTo(String.valueOf(answerId));
         assertThat(detail.getValue()).isNull();
         assertThat(cache.invalidations).isEqualTo(1);
+        verifyNoMoreInteractions(publisher, audit);
         assertThat(questions.findById(question.id()).orElseThrow().acceptedAnswerId()).isEqualTo(answerId);
     }
 
     @Test
-    @DisplayName("教师认证：事件与审计同时写入，且不重复")
+    @DisplayName("教师认证：事件与审计同时写入，认证不触发问题列表缓存失效")
     void endorsePublishesEventAndAudits() {
         long answerId = answers.save(Answer.submit(question, hong.userId(),
                 MarkdownBody.ofAnswer("黑高是核心不变量，只靠变色调整不了。"), NOW)).id();
@@ -154,5 +157,7 @@ class AnswerSideEffectCaptorTest {
         assertThat(targetType.getValue()).isEqualTo("ANSWER");
         assertThat(targetId.getValue()).isEqualTo(String.valueOf(answerId));
         assertThat(detail.getValue()).isNull();
+        assertThat(cache.invalidations).isZero();
+        verifyNoMoreInteractions(publisher, audit);
     }
 }
