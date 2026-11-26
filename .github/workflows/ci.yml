@@ -16,6 +16,9 @@ jobs:
   backend:
     name: 后端构建与验证
     runs-on: ubuntu-latest
+    # job 级注入，供 sonar 步骤的 if 条件判断 Secrets 是否配置（GitHub 不允许 if 直接引用 secrets）
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +57,29 @@ jobs:
         with:
           name: backend-test-reports
           path: "**/target/*-reports/*.xml"
+
+      - name: 归档 JaCoCo 覆盖率报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html-report
+          path: "backend/**/target/site/jacoco/**"
+          if-no-files-found: ignore
+
+      # 阶段 6：SonarQube 静态扫描 + 质量门禁（Lab 7 Step 3）
+      # 需要仓库 Secrets：SONAR_TOKEN、SONAR_HOST_URL；未配置时本步骤自动跳过，不阻塞其他步骤
+      - name: SonarQube 扫描与质量门禁
+        if: ${{ env.SONAR_TOKEN != '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn -B -f backend/pom.xml verify -DskipITs -Djacoco.skip=false -pl "$SPRINT_MODULES" -am
+          mvn -B -f backend/pom.xml sonar:sonar \
+            -Dsonar.projectKey=campus-overflow \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.qualitygate.wait=true
 
   frontend:
     name: 前端构建

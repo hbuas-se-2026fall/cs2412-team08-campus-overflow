@@ -37,6 +37,19 @@
         <jacoco.version>0.8.12</jacoco.version>
         <!-- 领域层行覆盖率门禁（适应度函数 FF-4）。学生版初始为 0，Sprint 4 前应提升到 0.80 -->
         <domain.coverage.minimum>0</domain.coverage.minimum>
+        <!-- Lab 7 Step 3：SonarQube 扫描配置（SonarScanner for Maven 不读 sonar-project.properties，只能走 Maven 属性） -->
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.projectKey>campus-overflow</sonar.projectKey>
+        <sonar.projectName>CampusOverflow</sonar.projectName>
+        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
+        <sonar.sources>co-shared-kernel,co-identity,co-qa,co-reputation,co-discovery,co-bootstrap</sonar.sources>
+        <sonar.tests>co-shared-kernel,co-identity,co-qa,co-reputation,co-discovery,co-bootstrap</sonar.tests>
+        <sonar.exclusions>**/target/**,**/src/main/resources/**,**/*.sql</sonar.exclusions>
+        <sonar.test.inclusions>**/src/test/java/**/*.java</sonar.test.inclusions>
+        <sonar.java.binaries>**/target/classes</sonar.java.binaries>
+        <sonar.java.test.binaries>**/target/test-classes</sonar.java.test.binaries>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.coverage.jacoco.xmlReportPaths>**/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
@@ -212,6 +225,14 @@
                     <!-- -Dtest 只命中部分模块时，未匹配模块不报错（CI 的架构约束检查阶段依赖此行为） -->
                     <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                 </configuration>
+            </plugin>
+            <!-- Lab 7 Step 3：SonarQube 扫描（mvn verify sonar:sonar，复用 JaCoCo 报告） -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>5.1.0.4751</version>
+                <!-- 只在父 POM 执行一次（mvn -N sonar:sonar），避免每个子模块重复扫描 -->
+                <inherited>false</inherited>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
