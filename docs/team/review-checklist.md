@@ -2,7 +2,7 @@
 
 CampusOverflow　|　软件工程（2026 秋）　|　Lab 7 测试、代码评审与质量门禁　|　生效日期：2026 年 11 月 26 日
 
-本清单依据课程教学方案 Lab 7 Step 4 制定，覆盖**正确性、可读性、可测性、安全、性能、风格**六个维度，用于每位成员评审自己未参与的 Pull Request。清单是人工复核依据，与 SonarQube / JaCoCo / Checkstyle / ESLint 等自动门禁互补：工具拦截格式、覆盖率、已知缺陷，人工重点判断业务规则、边界、上下文边界与可维护性。
+本清单依据课程教学方案 Lab 7 Step 4 制定，覆盖**正确性、可读性、可测性、安全、性能、风格**六个维度，用于每位成员评审自己未参与的 Pull Request。清单是人工复核依据，与仓库现有自动检查互补：JaCoCo 覆盖率报告、ArchUnit 分层约束、ESLint（`--max-warnings=0`）、Prettier、TypeScript 编译拦截格式与编译问题，人工重点判断业务规则、边界、上下文边界与可维护性。
 
 适用范围：后端 `co-identity` / `co-qa` / `co-reputation` / `co-discovery`（api · application · domain · infrastructure · interfaces 五层）、`co-shared-kernel`、`co-bootstrap`，以及 `frontend/`（React + TypeScript）。
 
@@ -13,7 +13,7 @@ CampusOverflow　|　软件工程（2026 秋）　|　Lab 7 测试、代码评�
 1. **选 PR**：从本 Sprint 选 1 个自己未参与开发的 PR；先读对应故事（`docs/backlog/stories/`）验收标准、相关 ADR 与错误码约定，再读代码。
 2. **先跑再评**：本地拉取评审分支，后端编译与单测、前端 `npm run typecheck` / `npm run lint` / `npm run build` 通过后再下结论；CI 因账户额度未跑起时，以本地结果为准并在评论中注明。
 3. **逐项核对**：按第三节六维度过一遍，每条意见标注证据位置（文件：方法 / 行）。
-4. **写实质意见**：每个 PR 至少 5 条实质性意见，按下述分级标注。
+4. **写实质意见**：每个 PR 至少 5 条实质性意见，其中 🟡 及以上不少于 3 条，按下述分级标注。
 5. **给结论**：Approved（可合）/ Request changes（阻塞项未清，不可合）/ Commented（仅建议，不阻塞）。
 
 ### 意见分级
@@ -38,14 +38,18 @@ CampusOverflow　|　软件工程（2026 秋）　|　Lab 7 测试、代码评�
 | 端 | 命令 | 通过标准 |
 | --- | --- | --- |
 | 后端编译 | `mvn -B -f backend/pom.xml clean compile` | 编译无错误 |
-| 后端单测 | `mvn -B -f backend/pom.xml test -pl "$SPRINT_MODULES" -am` | 测试全绿，无被改松或删除的断言 |
+| 后端单测 | `mvn -B -f backend/pom.xml test -pl co-shared-kernel,co-identity/co-identity-domain,co-identity/co-identity-application,co-identity/co-identity-interfaces,co-identity/co-identity-api,co-identity/co-identity-infrastructure,co-qa/co-qa-domain -am` | 测试全绿，无被改松或删除的断言 |
 | 架构约束 | `ArchitectureTest`（`co-bootstrap`） | ArchUnit 分层与依赖红线全绿 |
-| 覆盖率 | `mvn verify -DskipITs -Djacoco.skip=false -pl "$SPRINT_MODULES" -am` | 领域层行覆盖率不低于门禁 0.70 |
+| 覆盖率 | `mvn verify -DskipITs -Djacoco.skip=false -pl co-shared-kernel,co-identity/co-identity-domain,co-identity/co-identity-application,co-identity/co-identity-interfaces,co-identity/co-identity-api,co-identity/co-identity-infrastructure,co-qa/co-qa-domain -am` | 领域层行覆盖率目标 0.70；Step3 启用 jacoco `check` 前只出报告、不拦截合并（见 ADR-010 / D-06） |
 | 前端类型 | `npm run typecheck` | `tsc --noEmit` 无错误 |
 | 前端规范 | `npm run lint` | ESLint `--max-warnings=0` 无告警 |
 | 前端构建 | `npm run build` | `tsc -b && vite build` 成功 |
 
 > 跑不起来（无 Docker / 集成测试依赖中间件）时，明确标注“集成测试未在本地执行，待 CI/容器环境验证”，不要把未执行说成已通过。
+>
+> 上面命令的模块列表与 CI 的 `SPRINT_MODULES` 一致；该范围在工作流里由 env 变量注入，本地 shell 没有此变量，需按当前 Sprint 列表显式填写。
+>
+> 集成测试口径（ADR-010）：本阶段 Testcontainers 集成测试在 CI 中 `continue-on-error: true`，允许失败、记为观察项，不作为合并阻塞；Step3 解除该标记后，集成测试未通过转为阻塞项。
 
 ---
 
@@ -54,7 +58,7 @@ CampusOverflow　|　软件工程（2026 秋）　|　Lab 7 测试、代码评�
 ### 3.1 正确性（功能与需求一致）
 
 - [ ] 故事验收标准逐条实现，正常路径、边界路径、异常路径都有对应逻辑，没有只覆盖主流程。
-- [ ] 业务规则与指导书 / ADR 一致：投票每日上限按校园时区计数；采纳数与徽章对应；自问自答被采纳增量为 0、不写流水；悬赏缺少 sponsor 不发奖励；教师初始 1000 分、学生 0 分；排行榜结算可对账。
+- [ ] 业务规则与指导书 / ADR 一致：投票每日上限按校园时区计数；采纳数与徽章对应；自问自答被采纳增量为 0、不写流水；悬赏缺少 sponsor 不发奖励；教师初始 1000 分、学生 0 分（见 `ReputationRulebook.initialPoints`）；排行榜结算可对账。
 - [ ] 事件处理分支完整：每个事件类型都有对应分支，未覆盖的类型不会静默落入默认分支丢消息；内容删除事件须同时覆盖问题与回答两类目标。
 - [ ] 幂等成立：开户按 `findByUserId` + 用户唯一键；记账按事件标识 + 用户 + 原因查重；徽章、排行榜、悬赏结算在事件重复投递或手工重放 `outbox_event.published_at` 置空时不重复变化。
 - [ ] 空值与边界处理：`null`、空集合、非法枚举、不存在或越界 ID 有明确处理；计数与余额有防负保护（如 `GREATEST(..., 0)`）。
@@ -115,7 +119,7 @@ CampusOverflow　|　软件工程（2026 秋）　|　Lab 7 测试、代码评�
 - [ ] 命名、包结构、模块归属遵循 ADR-009 与既有目录约定，不新造平行结构。
 - [ ] 通过静态检查：后端编译 + ArchUnit 全绿；前端 `npm run lint`、`npm run typecheck` 通过；不绕过 husky 预提交钩子。
 - [ ] 错误码归位：前缀按上下文 `ID-` / `QA-` / `REP-` / `DIS-` / `AUTH-` / `SYS-`，段位 `1xxx` 业务规则、`2xxx` 冲突、`3xxx` 权限、`4xxx` 未找到；异常类型与 HTTP 状态对应（422 业务规则、409 冲突、403 权限、404 未找到 / 已软删除），见 `docs/错误码.md`。
-- [ ] 文件编码 UTF-8，无乱码；缩进、换行与 `.editorconfig` / Prettier 一致。
+- [ ] 文件编码 UTF-8，无乱码；缩进、换行与 `frontend/.editorconfig`、`frontend/.prettierrc.json` 一致。
 - [ ] 无调试残留：注释掉的代码、临时打印、临时代理地址、无用 import 已清理。
 - [ ] PR 描述写清动机、改动范围、验证方式与关联 PB；评审意见与代码结论一致，不写与现状不符的“全绿”“已通过”。
 
@@ -129,14 +133,14 @@ CampusOverflow　|　软件工程（2026 秋）　|　Lab 7 测试、代码评�
 2. **不跨上下文写库**：一个上下文不直接写另一个上下文的表；开户、结算等结果由本方聚合在自己事务内完成。
 3. **事件负载自洽**：开户所需的用户标识、昵称、角色随事件携带，消费方不回查身份库；事件 schema 变更要同步消费方与 ADR。
 4. **领域与持久化分离**：领域对象不被 JPA 实体污染；映射放在 infrastructure（ADR-008）。
-5. **契约优先**：前端类型由 `scripts/gen-api.ts` 从 OpenAPI 生成，不手写与后端漂移的接口类型（ADR-007）。
+5. **契约优先**：前端类型由 `frontend/scripts/gen-api.ts` 从 OpenAPI 生成，不手写与后端漂移的接口类型（ADR-007）。
 
 ---
 
 ## 五、评审记录与清单维护
 
 1. 意见落在对应 PR 评论区；结论以 GitHub Review 形式提交（Approved / Request changes / Commented）。
-2. 每份深度评审至少 5 条实质性意见，并保留评审记录（PR 评论导出 PDF 或截图），归入 Lab 7 提交物。
+2. 每份深度评审至少 5 条实质性意见，其中 🟡 及以上不少于 3 条；评审记录归入 `docs/review/pr-<编号>-<评审人>.md`（PR 评论另导出 PDF 或截图），作为 Lab 7 提交物。
 3. 本清单 v1.0 在 Sprint 3 末定稿；后续 Sprint 回顾会可根据评审中反复出现的问题增补条目，修订通过 PR 提交，版本号递增（v1.1、v1.2……）。
 4. 清单条目与自动门禁分工：工具已自动拦截的（格式、未用变量、编译错误）不再重复提；人工意见聚焦工具判断不了的业务正确性、边界、上下文边界与设计取舍。
 
@@ -149,6 +153,6 @@ CampusOverflow　|　软件工程（2026 秋）　|　Lab 7 测试、代码评�
 - [ ] 已读故事验收标准与相关 ADR / 错误码约定
 - [ ] 本地编译 / 单测 / 前端检查已跑（或注明未执行环境）
 - [ ] 六维度均已过一遍，证据位置可追溯
-- [ ] 至少 5 条实质性意见，每条含位置、问题、原因、方案
+- [ ] 至少 5 条实质性意见（🟡 及以上不少于 3 条），每条含位置、问题、原因、方案
 - [ ] 阻塞项、建议项、可选项已分别标注
 - [ ] 结论与实际验证结果一致，未把未执行说成已通过
