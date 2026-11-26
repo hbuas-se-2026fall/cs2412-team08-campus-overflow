@@ -43,14 +43,34 @@ export function AdminUsersPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / (data.size || PAGE_SIZE))) : 1;
 
   const submitCreate = async () => {
+    const username = form.username.trim();
+    const displayName = form.displayName.trim();
+    const email = form.email.trim();
+    const password = form.password;
+    if (!/^[A-Za-z0-9]{4,20}$/.test(username)) {
+      setFormError('账号需 4–20 位字母或数字');
+      return;
+    }
+    if (displayName.length < 2 || displayName.length > 20 || displayName.includes('@') || /\s/.test(displayName)) {
+      setFormError('姓名需 2–20 字，且不能包含 @ 或空格');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100) {
+      setFormError('邮箱格式不正确');
+      return;
+    }
+    if (password.length < 8 || password.length > 64 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setFormError('密码需 8–64 位，且同时包含字母和数字');
+      return;
+    }
     setCreating(true);
     setFormError('');
     try {
       await api.createStaff({
-        username: form.username.trim(),
-        displayName: form.displayName.trim(),
-        email: form.email.trim(),
-        password: form.password,
+        username,
+        displayName,
+        email,
+        password,
         role: form.role,
         college: form.college.trim() || undefined,
       });

@@ -61,7 +61,7 @@ export function CoursesPage() {
   };
 
   const joinedIds = new Set(mine.map((c) => c.id));
-  const canAssign = selected ? selected.myRole === 'TEACHER' || selected.myRole === 'TA' : false;
+  const canAssign = selected ? selected.myRole === 'TEACHER' || me?.role === 'ADMIN' : false;
 
   return (
     <div className="layout">
@@ -140,7 +140,7 @@ export function CoursesPage() {
 
       <aside>
         <h3>课程角色</h3>
-        <p className="muted">STUDENT 可提问与回答；TA、TEACHER 可以认证回答、发起悬赏并管理课程成员。</p>
+        <p className="muted">STUDENT 可提问与回答；TA、TEACHER 可以认证回答、发起悬赏；课程成员角色只有课程教师或管理员可以调整。</p>
       </aside>
     </div>
   );

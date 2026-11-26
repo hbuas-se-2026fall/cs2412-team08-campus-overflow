@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import { highlightCode } from '../lib/highlight';
 import 'highlight.js/styles/github.css';
 
-marked.setOptions({ gfm: true, breaks: true });
+marked.setOptions({ gfm: true });
 
 export function MarkdownPreview({ text, emptyHint = '没有内容可预览' }: { text: string; emptyHint?: string }) {
   const ref = useRef<HTMLDivElement>(null);

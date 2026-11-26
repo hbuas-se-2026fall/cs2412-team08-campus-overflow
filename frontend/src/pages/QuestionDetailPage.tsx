@@ -22,26 +22,44 @@ export function QuestionDetailPage() {
   const [editDraft, setEditDraft] = useState('');
   const [editTab, setEditTab] = useState<'edit' | 'preview'>('edit');
   const [answerTab, setAnswerTab] = useState<'edit' | 'preview'>('edit');
-  const [saving, setSaving] = useState(false);
+  const [savingAnswer, setSavingAnswer] = useState(false);
+  const [savingQuestion, setSavingQuestion] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(false);
   const [qTitle, setQTitle] = useState('');
   const [qBody, setQBody] = useState('');
   const [qTags, setQTags] = useState('');
   const [qTab, setQTab] = useState<'edit' | 'preview'>('edit');
   const bodyRef = useRef<HTMLDivElement>(null);
+  const loadSeq = useRef(0);
 
   const load = useCallback(() => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     api.question(questionId)
-      .then((r) => { setQ(r); setError(''); })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then((r) => {
+        if (seq !== loadSeq.current) return;
+        setQ(r);
+        setError('');
+      })
+      .catch((e) => {
+        if (seq === loadSeq.current) setError(e.message);
+      })
+      .finally(() => {
+        if (seq === loadSeq.current) setLoading(false);
+      });
   }, [questionId]);
 
   useEffect(() => {
     load();
-    api.related(questionId).then(setRelated).catch(() => undefined);
-  }, [load, questionId, tick]);
+  }, [load, tick]);
+
+  useEffect(() => {
+    let stale = false;
+    api.related(questionId)
+      .then((r) => { if (!stale) setRelated(r); })
+      .catch(() => undefined);
+    return () => { stale = true; };
+  }, [questionId, tick]);
 
   useEffect(() => {
     highlightCode(bodyRef.current);
@@ -63,7 +81,7 @@ export function QuestionDetailPage() {
   const canManage = q.permissions.canManage;
 
   const saveAnswer = async (answerId: number) => {
-    setSaving(true);
+    setSavingAnswer(true);
     try {
       await api.editAnswer(answerId, editDraft);
       setEditingId(null);
@@ -72,17 +90,26 @@ export function QuestionDetailPage() {
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setSaving(false);
+      setSavingAnswer(false);
     }
   };
 
   const saveQuestion = async () => {
-    setSaving(true);
+    const tagList = qTags.split(/[,，\s]+/).filter(Boolean);
+    if (qTitle.trim().length < 10 || qTitle.trim().length > 150) {
+      setError('标题需 10–150 字');
+      return;
+    }
+    if (tagList.length < 1 || tagList.length > 5) {
+      setError('标签需 1–5 个');
+      return;
+    }
+    setSavingQuestion(true);
     try {
       await api.editQuestion(q.id, {
         title: qTitle.trim(),
         body: qBody,
-        tags: qTags.split(/[,，\s]+/).filter(Boolean),
+        tags: tagList,
       });
       setEditingQuestion(false);
       setError('');
@@ -90,7 +117,7 @@ export function QuestionDetailPage() {
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setSaving(false);
+      setSavingQuestion(false);
     }
   };
 
@@ -123,8 +150,8 @@ export function QuestionDetailPage() {
               <input value={qTags} onChange={(e) => setQTags(e.target.value)} placeholder="用空格或逗号分隔" />
             </label>
             <div className="actions">
-              <button className="primary" disabled={saving} onClick={saveQuestion}>
-                {saving ? '保存中…' : '保存'}
+              <button className="primary" disabled={savingQuestion} onClick={saveQuestion}>
+                {savingQuestion ? '保存中…' : '保存'}
               </button>
               <button onClick={() => setEditingQuestion(false)}>取消</button>
             </div>
@@ -195,8 +222,8 @@ export function QuestionDetailPage() {
                     <MarkdownPreview text={editDraft} />
                   )}
                   <div className="actions">
-                    <button className="primary" disabled={saving} onClick={() => saveAnswer(a.id)}>
-                      {saving ? '保存中…' : '保存'}
+                    <button className="primary" disabled={savingAnswer} onClick={() => saveAnswer(a.id)}>
+                      {savingAnswer ? '保存中…' : '保存'}
                     </button>
                     <button onClick={() => { setEditingId(null); setEditTab('edit'); }}>取消</button>
                   </div>

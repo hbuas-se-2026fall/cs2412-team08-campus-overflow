@@ -84,7 +84,7 @@ export const api = {
     request<{ id: number }>('POST', `/v1/questions/${questionId}/bounty`, { points, days }),
 
   updateProfile: (body: { displayName: string; email: string }) =>
-    request<void>('PUT', '/v1/auth/profile', body),
+    request<Me>('PUT', '/v1/auth/profile', body),
   editQuestion: (id: number, body: { title: string; body: string; tags: string[] }) =>
     request<void>('PUT', `/v1/questions/${id}`, body),
   editAnswer: (id: number, body: string) => request<void>('PUT', `/v1/answers/${id}`, { body }),

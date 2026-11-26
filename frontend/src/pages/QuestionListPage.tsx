@@ -27,11 +27,13 @@ export function QuestionListPage() {
     const promise = searching
       ? api.search(keyword.trim(), { tag: activeTag, sort, unanswered, bounty })
       : api.questions(1);
+    let stale = false;
     setLoading(true);
     promise
-      .then((r) => { setData(r); setError(''); })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then((r) => { if (stale) return; setData(r); setError(''); })
+      .catch((e) => { if (!stale) setError(e.message); })
+      .finally(() => { if (!stale) setLoading(false); });
+    return () => { stale = true; };
   }, [keyword, activeTag, sort, unanswered, bounty, tick]);
 
   return (

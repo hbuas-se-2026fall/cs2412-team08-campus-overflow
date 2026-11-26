@@ -3,7 +3,7 @@ import { api } from '../api';
 import { useAuth } from '../auth';
 
 export function ProfilePage() {
-  const { me, refresh } = useAuth();
+  const { me, applyMe } = useAuth();
   const [displayName, setDisplayName] = useState(me?.displayName ?? '');
   const [email, setEmail] = useState(me?.email ?? '');
   const [error, setError] = useState('');
@@ -17,8 +17,8 @@ export function ProfilePage() {
     setError('');
     setNotice('');
     try {
-      await api.updateProfile({ displayName: displayName.trim(), email: email.trim() });
-      await refresh();
+      const saved = await api.updateProfile({ displayName: displayName.trim(), email: email.trim() });
+      applyMe(saved);
       setNotice('资料已保存');
     } catch (e) {
       setError((e as Error).message);
