@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import type { QuestionDetail, RelatedQuestion } from '../types';
@@ -12,6 +13,9 @@ export function QuestionDetailPage() {
   const [related, setRelated] = useState<RelatedQuestion[]>([]);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
+  const [bountyOpen, setBountyOpen] = useState(false);
+  const [bountyPoints, setBountyPoints] = useState('50');
+  const [bountyDays, setBountyDays] = useState('7');
 
   const load = useCallback(() => {
     api.question(questionId).then(setQ).catch((e) => setError(e.message));
@@ -22,7 +26,24 @@ export function QuestionDetailPage() {
     api.related(questionId).then(setRelated).catch(() => undefined);
   }, [load, questionId]);
 
-  const act = (fn: () => Promise<unknown>) => fn().then(load).catch((e) => setError(e.message));
+  const act = (fn: () => Promise<unknown>) => {
+    setError('');
+    return fn().then(load).catch((e) => setError(e.message));
+  };
+
+  const submitBounty = () => {
+    const points = Number(bountyPoints);
+    if (!Number.isInteger(points) || points < 10 || points > 500) {
+      setError('悬赏积分须为 10–500 的整数');
+      return;
+    }
+    const days = Number(bountyDays);
+    if (!Number.isInteger(days) || days < 1 || days > 14) {
+      setError('悬赏期限须为 1–14 天');
+      return;
+    }
+    act(() => api.bounty(questionId, points, days)).then(() => setBountyOpen(false));
+  };
 
   if (!q) return <p className="muted">{error || '加载中…'}</p>;
 
@@ -45,15 +66,26 @@ export function QuestionDetailPage() {
           </div>
           <div className="body">
             {/* 正文由后端渲染并经 commonmark + OWASP Sanitizer 双重净化 */}
-            <div dangerouslySetInnerHTML={{ __html: q.bodyHtml }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.bodyHtml) }} />
             <div className="tagrow">{q.tags.map((t) => <span key={t} className="tag">{t}</span>)}</div>
             <CommentList comments={q.comments} targetType="QUESTION" targetId={q.id} onDone={load} canComment={!!me} />
-            {canManage && (
-              <button className="link" onClick={() => {
-                const points = Number(prompt('悬赏积分（10–500）', '50'));
-                if (points) act(() => api.bounty(q.id, points, 7));
-              }}>发起悬赏
-              </button>
+            {canManage && !bountyOpen && (
+              <button className="link" onClick={() => setBountyOpen(true)}>发起悬赏</button>
+            )}
+            {canManage && bountyOpen && (
+              <div className="bounty-form">
+                <label>积分
+                  <input type="number" min={10} max={500} value={bountyPoints}
+                         onChange={(e) => setBountyPoints(e.target.value)} />
+                </label>
+                <label>期限
+                  <select value={bountyDays} onChange={(e) => setBountyDays(e.target.value)}>
+                    {[1, 3, 7, 14].map((d) => <option key={d} value={d}>{d} 天</option>)}
+                  </select>
+                </label>
+                <button className="primary" onClick={submitBounty}>确认发起</button>
+                <button onClick={() => setBountyOpen(false)}>取消</button>
+              </div>
             )}
           </div>
         </div>
@@ -68,7 +100,7 @@ export function QuestionDetailPage() {
               {q.acceptedAnswerId === a.id && <span className="check-mark" title="已采纳">✔</span>}
             </div>
             <div className="body">
-              <div dangerouslySetInnerHTML={{ __html: a.bodyHtml }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(a.bodyHtml) }} />
               <p className="muted">
                 {a.author.displayName}
                 {a.endorsedBy && <span className="endorsed">教师认证 · {a.endorsedBy.displayName}</span>}

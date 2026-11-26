@@ -100,3 +100,8 @@ article h1 { font-size: 24px; margin-bottom: 4px; }
 .delta-neg { color: var(--danger); font-weight: 600; }
 .pager { align-items: center; margin-top: 8px; }
 .pager button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* 详情页发起悬赏的内联表单 */
+.bounty-form { display: flex; align-items: flex-end; gap: 8px; padding: 8px 0; }
+.bounty-form label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 13px; }
+.bounty-form input { width: 90px; }

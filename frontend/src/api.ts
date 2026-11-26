@@ -83,7 +83,7 @@ export const api = {
   bounty: (questionId: number, points: number, days: number) =>
     request<{ id: number }>('POST', `/v1/questions/${questionId}/bounty`, { points, days }),
 
-  notifications: () => get<Page<Notification>>('/v1/notifications'),
+  notifications: (page = 1) => get<Page<Notification>>(`/v1/notifications?page=${page}`),
   unreadCount: () => get<{ count: number }>('/v1/notifications/unread-count'),
   markRead: (id: number) => request<void>('POST', `/v1/notifications/${id}/read`, {}),
   readAll: () => request<{ updated: number }>('POST', '/v1/notifications/read-all', {}),
