@@ -115,7 +115,15 @@ class QuestionInteractionIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"targetType\":\"QUESTION\",\"targetId\":" + questionId
                                 + ",\"parentId\":" + replyId + ",\"body\":\"那第二层回复应该被拒绝。\"}"))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("QA-1016"));
+
+        mvc.perform(post("/api/v1/comments").session(hong).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetType\":\"ANSWER\",\"targetId\":" + answerId
+                                + ",\"parentId\":" + commentId + ",\"body\":\"跨目标回复应当被拒绝。\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("QA-1017"));
 
         mvc.perform(get("/api/v1/tags/popular").param("limit", "50"))
                 .andExpect(status().isOk())
