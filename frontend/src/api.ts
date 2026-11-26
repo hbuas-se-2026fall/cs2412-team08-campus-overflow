@@ -90,8 +90,8 @@ export const api = {
   editAnswer: (id: number, body: string) => request<void>('PUT', `/v1/answers/${id}`, { body }),
   deleteAnswer: (id: number) => request<void>('DELETE', `/v1/answers/${id}`),
 
-  adminUsers: (verified: boolean, page = 1) =>
-    get<Page<AdminUser>>(`/v1/admin/users?verified=${verified}&page=${page}`),
+  adminUsers: (verified: boolean, page = 1, size = 20) =>
+    get<Page<AdminUser>>(`/v1/admin/users?verified=${verified}&page=${page}&size=${size}`),
   verifyUser: (id: number) => request<void>('POST', `/v1/admin/users/${id}/verify`, {}),
   createStaff: (body: { username: string; displayName: string; email: string; password: string; role: string; college?: string }) =>
     request<{ id: number }>('POST', '/v1/admin/users', body),

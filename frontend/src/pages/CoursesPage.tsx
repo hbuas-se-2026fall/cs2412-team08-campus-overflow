@@ -29,11 +29,14 @@ export function CoursesPage() {
 
   useEffect(() => {
     if (!selected) { setMembers([]); return; }
+    let alive = true;
+    setMembers([]);
     setMembersLoading(true);
     api.courseMembers(selected.id)
-      .then((r) => { setMembers(r); setError(''); })
-      .catch((e) => setError(e.message))
-      .finally(() => setMembersLoading(false));
+      .then((r) => { if (alive) { setMembers(r); setError(''); } })
+      .catch((e) => { if (alive) setError(e.message); })
+      .finally(() => { if (alive) setMembersLoading(false); });
+    return () => { alive = false; };
   }, [selected]);
 
   const join = async (course: Course) => {

@@ -23,7 +23,7 @@ export function AdminUsersPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    api.adminUsers(verified, page)
+    api.adminUsers(verified, page, PAGE_SIZE)
       .then((r) => { setData(r); setError(''); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -40,7 +40,7 @@ export function AdminUsersPage() {
       .finally(() => setBusyId(null));
   };
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / (data.size || PAGE_SIZE))) : 1;
 
   const submitCreate = async () => {
     setCreating(true);
@@ -71,10 +71,10 @@ export function AdminUsersPage() {
         <h1>用户管理</h1>
         <div className="toolbar">
           <div className="tabs">
-            <button className={!verified ? 'active' : ''} onClick={() => { setVerified(false); setPage(1); }}>
+            <button className={!verified ? 'active' : ''} onClick={() => { setVerified(false); setPage(1); setError(''); setNotice(''); }}>
               待认证
             </button>
-            <button className={verified ? 'active' : ''} onClick={() => { setVerified(true); setPage(1); }}>
+            <button className={verified ? 'active' : ''} onClick={() => { setVerified(true); setPage(1); setError(''); setNotice(''); }}>
               已认证
             </button>
           </div>
