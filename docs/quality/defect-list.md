@@ -14,12 +14,11 @@
 | D-05 | 集成测试在 CI 中不计入门禁 | CI / backend | `ci.yml` 的集成测试步骤带 `continue-on-error: true`，Testcontainers 失败不会拦住合并 | P1 | 待修（王钰滢 Step3） | 自查 |
 | D-06 | 覆盖率门禁阈值未启用 | CI / backend | 根 pom 的 `domain.coverage.minimum` 为 0 且未配置 `check` 执行，JaCoCo 只出报告不拦截 | P1 | 待修（王钰滢 Step3） | 自查 |
 | D-07 | `co-qa-interfaces` 与 `co-qa-infrastructure` 无单元测试 | backend / Q&A | 接口层 5 个类、基础设施层 17 个类零单测，此前仅靠端到端 IT 间接覆盖 | P2 | 部分缓解 | 自查 |
-
-| D-08 | CI 集成测试步骤长期失败，被 `continue-on-error` 掩盖 | CI / backend | main 分支 034af0e 与 1f997a7 的 CI 运行里，「集成测试」步骤均标记为成功但 job 带 failure 注解 `Process completed with exit code 1`，即 `mvn verify -Dsurefire.skip=true` 实际失败；步骤耗时仅 25 秒，与真实拉起 MySQL 8 与 Redis 7 的两个 Testcontainers 用例不相符 | P1 | 待排查（王钰滢 Step3 收紧门禁时定位）；Step3 收紧前未修复则升 P0 | 自查 |
+| D-08 | CI 集成测试步骤被 `continue-on-error` 掩盖，失败原因不可见 | CI / backend | 「集成测试」步骤在 Check 注释里带 `Process completed with exit code 1`，后端 job 仍显示 succeeded，API 里该 step 结论为 success（continue-on-error 的表现）。e4973b2 的运行 run 45740544391 中该步骤耗时 28 秒；本地用同一条命令 `verify -Dsurefire.skip=true` 执行时，failsafe 能识别 `CampusOverflowFlowIT` 与 `QuestionInteractionIT`，说明 CI 该步骤不是空跑，失败发生在运行期。当前拿不到步骤日志正文（匿名 API 403、Actions 日志面板未渲染、artifact 下载被拦），失败原因未定位 | P1 | 待排查（王钰滢 Step3 收紧门禁时贴日志定位）；Step3 收紧前未修复则升 P0 | 自查 + 评审 #102 |
 
 D-07 的缓解说明：新增 `QuestionInteractionIT` 覆盖投票改投、评论层级、热门标签的 Controller → Service → Repository 全链路，接口层与持久化层不再是纯裸奔状态，但仓储层的分支（软删过滤、分页边界）仍需补单测。
 
-D-08 的影响说明：由于该步骤在 CI 里从未真正通过，Lab7 新增的 `QuestionInteractionIT` 与既有的 `CampusOverflowFlowIT` 都无法得到有效验证，本地亦无 Docker 可跑。收紧门禁（去掉 `continue-on-error`）之前必须先定位这处失败，否则 Sprint 4 的集成测试结论不成立。
+D-08 的影响说明：该步骤的失败结论目前无法核实（日志不可得），因此 Lab7 新增的 `QuestionInteractionIT` 与既有的 `CampusOverflowFlowIT` 都不能记为「已验证通过」，本地也无 Docker 可替代。收紧门禁前必须先拿到一次失败的步骤日志并定位根因，否则 Sprint 4 的集成测试结论不成立。
 
 ## 二、登记模板
 
