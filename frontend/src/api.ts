@@ -1,6 +1,6 @@
 import type {
-  LeaderboardEntry, LedgerEntry, Me, Notification, Page, QuestionDetail, QuestionSummary, RelatedQuestion,
-  ReputationProfile, SearchResult,
+  AdminUser, Course, CourseMember, LeaderboardEntry, LedgerEntry, Me, Notification, Page, QuestionDetail,
+  QuestionSummary, RelatedQuestion, ReputationProfile, SearchResult,
 } from './types';
 
 /** 后端以 RFC 9457 Problem Details 返回错误，这里统一转成带业务码的异常。 */
@@ -82,6 +82,28 @@ export const api = {
     get<Page<LedgerEntry>>(`/v1/users/${userId}/reputation/ledger?page=${page}&size=${size}`),
   bounty: (questionId: number, points: number, days: number) =>
     request<{ id: number }>('POST', `/v1/questions/${questionId}/bounty`, { points, days }),
+
+  updateProfile: (body: { displayName: string; email: string }) =>
+    request<Me>('PUT', '/v1/auth/profile', body),
+  editQuestion: (id: number, body: { title: string; body: string; tags: string[] }) =>
+    request<void>('PUT', `/v1/questions/${id}`, body),
+  editAnswer: (id: number, body: string) => request<void>('PUT', `/v1/answers/${id}`, { body }),
+  deleteAnswer: (id: number) => request<void>('DELETE', `/v1/answers/${id}`),
+
+  adminUsers: (verified: boolean, page = 1, size = 20) =>
+    get<Page<AdminUser>>(`/v1/admin/users?verified=${verified}&page=${page}&size=${size}`),
+  verifyUser: (id: number) => request<void>('POST', `/v1/admin/users/${id}/verify`, {}),
+  createStaff: (body: { username: string; displayName: string; email: string; password: string; role: string; college?: string }) =>
+    request<{ id: number }>('POST', '/v1/admin/users', body),
+  changeUserRole: (id: number, role: string) => request<void>('PUT', `/v1/admin/users/${id}/role`, { role }),
+  disableUser: (id: number) => request<void>('POST', `/v1/admin/users/${id}/disable`, {}),
+
+  courses: () => get<Course[]>('/v1/courses'),
+  myCourses: () => get<Course[]>('/v1/courses/mine'),
+  joinCourse: (id: number) => request<void>('POST', `/v1/courses/${id}/join`, {}),
+  courseMembers: (id: number) => get<CourseMember[]>(`/v1/courses/${id}/members`),
+  assignCourseRole: (courseId: number, userId: number, role: string) =>
+    request<void>('PUT', `/v1/courses/${courseId}/members/${userId}`, { role }),
 
   notifications: () => get<Page<Notification>>('/v1/notifications'),
   unreadCount: () => get<{ count: number }>('/v1/notifications/unread-count'),
