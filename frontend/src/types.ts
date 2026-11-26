@@ -47,6 +47,17 @@ export interface ReputationProfile {
   badges: { code: string; name: string; description: string; awardedAt: string }[];
 }
 
+export interface AdminUser {
+  id: number; maskedUsername: string; displayName: string; role: Role; verified: boolean;
+  college?: string; className?: string; createdAt: string;
+}
+
+export interface Course {
+  id: number; code: string; name: string; term: string; teacherId: number; teacherName: string; myRole?: string;
+}
+
+export interface CourseMember { userId: number; displayName: string; role: 'STUDENT' | 'TA' | 'TEACHER' }
+
 export interface LedgerEntry {
   id: number; reason: string; reasonLabel: string; delta: number; refType: string; refId: number; createdAt: string;
 }

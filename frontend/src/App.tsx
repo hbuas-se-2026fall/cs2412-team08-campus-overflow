@@ -9,6 +9,10 @@ import { LoginPage } from './pages/LoginPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ReputationPage } from './pages/ReputationPage';
+import { AdminUsersPage } from './pages/AdminUsersPage';
+import { CoursesPage } from './pages/CoursesPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 function Header() {
   const { me, logout } = useAuth();
@@ -28,15 +32,17 @@ function Header() {
       <Link className="brand" to="/">CampusOverflow</Link>
       <nav>
         <Link to="/">问题</Link>
+        <Link to="/courses">课程</Link>
         <Link to="/leaderboard">排行榜</Link>
         {me && <Link to={`/users/${me.id}`}>我的声誉</Link>}
         {me && <Link to="/notifications">通知{unread > 0 && <span className="badge">{unread}</span>}</Link>}
+        {me?.role === 'ADMIN' && <Link to="/admin/users">管理</Link>}
       </nav>
       <div className="spacer" />
       {me ? (
         <div className="user">
           <span>{me.displayName}</span>
-          <span className="role">{me.role}</span>
+          <Link to="/profile" className="role">{me.role}</Link>
           <button onClick={() => logout().then(() => navigate('/'))}>退出</button>
         </div>
       ) : (
@@ -44,6 +50,13 @@ function Header() {
       )}
     </header>
   );
+}
+
+function RequireAdmin({ children }: { children: JSX.Element }) {
+  const { me, loading } = useAuth();
+  if (loading) return <p className="muted">加载中…</p>;
+  if (!me) return <Navigate to="/login" replace />;
+  return me.role === 'ADMIN' ? children : <Navigate to="/" replace />;
 }
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -66,6 +79,10 @@ export function App() {
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/users/:id" element={<ReputationPage />} />
             <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/admin/users" element={<RequireAdmin><AdminUsersPage /></RequireAdmin>} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
       </AuthProvider>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
+import { ErrorBox, SkeletonList } from '../components/States';
 import type { Page, QuestionSummary, SearchResult } from '../types';
 
 export function QuestionListPage() {
@@ -14,6 +15,8 @@ export function QuestionListPage() {
   const [unanswered, setUnanswered] = useState(false);
   const [bounty, setBounty] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     api.popularTags().then(setTags).catch(() => undefined);
@@ -24,8 +27,12 @@ export function QuestionListPage() {
     const promise = searching
       ? api.search(keyword.trim(), { tag: activeTag, sort, unanswered, bounty })
       : api.questions(1);
-    promise.then((r) => { setData(r); setError(''); }).catch((e) => setError(e.message));
-  }, [keyword, activeTag, sort, unanswered, bounty]);
+    setLoading(true);
+    promise
+      .then((r) => { setData(r); setError(''); })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [keyword, activeTag, sort, unanswered, bounty, tick]);
 
   return (
     <div className="layout">
@@ -55,8 +62,9 @@ export function QuestionListPage() {
             标签筛选：<b>{activeTag}</b> <button onClick={() => setActiveTag(undefined)}>清除</button>
           </p>
         )}
-        {error && <p className="error">{error}</p>}
+        <ErrorBox message={error} onRetry={() => setTick((t) => t + 1)} />
 
+        {loading ? <SkeletonList rows={5} /> : (
         <ul className="qlist">
           {data?.items.map((q) => (
             <li key={q.id}>
@@ -79,7 +87,8 @@ export function QuestionListPage() {
             </li>
           ))}
         </ul>
-        {data && data.items.length === 0 && <p className="muted">没有匹配的问题，换个关键词试试。</p>}
+        )}
+        {!loading && data && data.items.length === 0 && <p className="muted">没有匹配的问题，换个关键词试试。</p>}
       </section>
 
       <aside>
