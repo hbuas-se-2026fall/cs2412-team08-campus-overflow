@@ -119,7 +119,7 @@ server:
   servlet:
     session:
       cookie:
-        secure: true
+        secure: ${COOKIE_SECURE:true}  # 默认只在 HTTPS 下发送 Cookie，纯 HTTP 环境显式置 false
 springdoc:
   swagger-ui:
     enabled: false                 # 生产环境关闭在线文档

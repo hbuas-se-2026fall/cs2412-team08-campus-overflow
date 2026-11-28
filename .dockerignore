@@ -9,6 +9,7 @@ postman
 
 **/target
 **/node_modules
+**/src/test
 frontend/dist
 **/*.log
 **/*.tsbuildinfo

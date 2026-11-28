@@ -7,7 +7,9 @@
 
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /src
-# 先拷 pom 再拷源码，让依赖层可复用
+# 拷源码后编译。依赖复用靠下面 RUN 的 BuildKit 缓存挂载（~/.m2），不是靠 pom 层缓存：
+# 本仓库是多模块，只拷父 pom 跑不了子模块，所以没有 dependency:go-offline 那一层。
+# 注意 --mount 需要 BuildKit：compose v2 默认开启；老环境直接 docker build 会报 Unknown flag。
 COPY backend/pom.xml ./pom.xml
 COPY backend/ ./
 RUN --mount=type=cache,target=/root/.m2 \
