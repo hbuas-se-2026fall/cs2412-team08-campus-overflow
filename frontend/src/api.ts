@@ -105,7 +105,7 @@ export const api = {
   assignCourseRole: (courseId: number, userId: number, role: string) =>
     request<void>('PUT', `/v1/courses/${courseId}/members/${userId}`, { role }),
 
-  notifications: () => get<Page<Notification>>('/v1/notifications'),
+  notifications: (page = 1, size = 20) => get<Page<Notification>>(`/v1/notifications?page=${page}&size=${size}`),
   unreadCount: () => get<{ count: number }>('/v1/notifications/unread-count'),
   markRead: (id: number) => request<void>('POST', `/v1/notifications/${id}/read`, {}),
   readAll: () => request<{ updated: number }>('POST', '/v1/notifications/read-all', {}),
