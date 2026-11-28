@@ -77,4 +77,58 @@ class BountyAndAccountTest {
         assertThat(AcademicTerm.monthKey(Instant.parse("2026-10-08T02:00:00Z"))).isEqualTo("2026-10");
         assertThat(AcademicTerm.weekKey(Instant.parse("2026-10-08T02:00:00Z"))).isEqualTo("2026-W41");
     }
+
+    @Test
+    void bountyPointsAndDaysRespectLimits() {
+        assertThatThrownBy(() -> Bounty.open(10, true, teacher, true, 501, 7, NOW))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> Bounty.open(10, true, teacher, true, 9, 7, NOW))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> Bounty.open(10, true, teacher, true, 50, 0, NOW))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> Bounty.open(10, true, teacher, true, 50, 15, NOW))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThat(Bounty.open(10, true, teacher, true, 10, 1, NOW).points()).isEqualTo(10);
+        assertThat(Bounty.open(10, true, teacher, true, 500, 14, NOW).points()).isEqualTo(500);
+    }
+
+    @Test
+    void closedBountyCannotBeAwardedOrReopened() {
+        Bounty expired = Bounty.open(10, true, teacher, true, 50, 1, NOW);
+        expired.close(NOW.plus(Duration.ofDays(2)));
+        assertThat(expired.status()).isEqualTo(BountyStatus.EXPIRED);
+        assertThatThrownBy(() -> expired.close(NOW)).isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> expired.award(50, 3, NOW)).isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    void accountRejectsNonPositiveAndInsufficientFrozen() {
+        ReputationAccount acc = ReputationAccount.open(9, 1000);
+        acc.freezePoints(300);
+        assertThatThrownBy(() -> acc.spendFrozen(0)).isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> acc.refundFrozen(-1)).isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> acc.spendFrozen(301)).isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> acc.refundFrozen(301)).isInstanceOf(BusinessRuleException.class);
+        acc.applyReputation(50);
+        assertThat(acc.reputation()).isEqualTo(50);
+    }
+
+    @Test
+    void reasonLabelsAndVoteClassification() {
+        assertThat(ReputationReason.ANSWER_ACCEPTED.label()).isEqualTo("回答被采纳");
+        assertThat(ReputationReason.QUESTION_VOTE.isVote()).isTrue();
+        assertThat(ReputationReason.ANSWER_VOTE.isVote()).isTrue();
+        assertThat(ReputationReason.BOUNTY_AWARDED.isVote()).isFalse();
+    }
+
+    @Test
+    void ledgerEntryRejectsNullReasonAndEvent() {
+        assertThatThrownBy(() -> LedgerEntry.of(1, null, ReputationReason.ANSWER_ACCEPTED, 10,
+                "QUESTION", 10, NOW)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> LedgerEntry.of(1, "evt-1", null, 10,
+                "QUESTION", 10, NOW)).isInstanceOf(NullPointerException.class);
+        LedgerEntry entry = LedgerEntry.of(1, "evt-1", ReputationReason.ANSWER_ACCEPTED, 10,
+                "QUESTION", 10, NOW);
+        assertThat(entry.delta()).isEqualTo(10);
+    }
 }
