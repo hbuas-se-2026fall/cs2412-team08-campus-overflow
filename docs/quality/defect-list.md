@@ -12,7 +12,7 @@
 | D-03 | 演示脚本 4:20 段的 Swagger 分组名错误 | docs / 演示材料 | `GET /api/v1/admin/reputation/reconciliation` 位于 `AdminReputationController`，`@Tag` 为「管理 Admin」，脚本写成在「声誉 Reputation」分组操作，现场会找不到入口 | P1 | 已合并，待补改 | 评审 #99 |
 | D-04 | 前端缺少自动化测试 | frontend | CI 仅执行 `typecheck` 与 `build`，无单测与组件测试，页面逻辑全靠人工冒烟 | P1 | 待排期 | 自查 |
 | D-05 | 集成测试在 CI 中不计入门禁 | CI / backend | `ci.yml` 的集成测试步骤带 `continue-on-error: true`，Testcontainers 失败不会拦住合并 | P1 | 已确认·待排期（Lab7 Step3 遗留，修复归属与窗口待团队确认；关闭判据：集成测试真实失败即拦合并） | 自查 |
-| D-06 | 覆盖率门禁阈值未启用 | CI / backend | 根 pom 的 `domain.coverage.minimum` 为 0 且未配置 `check` 执行，JaCoCo 只出报告不拦截 | P1 | 已确认·待排期（Lab7 Step3 遗留，Sonar 步骤依赖 `SONAR_TOKEN`，未配置即跳过，等同未生效；关闭判据：门禁 Failed 能拦住合并） | 自查 |
+| D-06 | 覆盖率门禁阈值未启用 | CI / backend | 根 pom 的 `domain.coverage.minimum` 为 0 且未配置 `check` 执行，JaCoCo 只出报告不拦截 | P1 | 已确认·待排期（Lab7 Step3 遗留，含两处：Sonar 步骤依赖 `SONAR_TOKEN`，未配置即跳过、等同未生效；覆盖率门禁的分母只取 `SPRINT_MODULES`，`co-bootstrap` 的可执行行（JaCoCo 口径 257 行，非源码行数）未纳入统计。关闭判据：门禁 Failed 能拦住合并且分母覆盖全部可测模块） | 自查 |
 | D-07 | `co-qa-interfaces` 与 `co-qa-infrastructure` 无单元测试 | backend / Q&A | 接口层 5 个类、基础设施层 17 个类零单测，此前仅靠端到端 IT 间接覆盖 | P2 | 部分缓解 | 自查 |
 | D-08 | CI 集成测试步骤被 `continue-on-error` 掩盖，失败原因不可见 | CI / backend | 「集成测试」步骤在 Check 注释里带 `Process completed with exit code 1`，后端 job 仍显示 succeeded，API 里该 step 结论为 success（continue-on-error 的表现）。e4973b2 的运行 run 45740544391 中该步骤耗时 28 秒；本地用同一条命令 `verify -Dsurefire.skip=true` 执行时，failsafe 能识别 `CampusOverflowFlowIT` 与 `QuestionInteractionIT`，说明 CI 该步骤不是空跑，失败发生在运行期。失败原因已定位，见下方 2026-11-28 补充说明 | P1 | 已确认·待排期（Lab7 Step3 遗留，失败点已定位到容器启动阶段，配置层根因待诊断；关闭判据：failsafe errors 归零） | 自查 + 评审 #102 |
 
