@@ -54,9 +54,8 @@ public class QuestionCommandService {
 
     @Transactional
     public long post(Actor actor, PostQuestionCommand cmd) {
-        if (cmd.courseId() != null) {
-            identity.findCourse(cmd.courseId())
-                    .orElseThrow(() -> new NotFoundException("ID-4002", "课程不存在"));
+        if (cmd.courseId() != null && identity.findCourse(cmd.courseId()).isEmpty()) {
+            throw new NotFoundException("ID-4002", "课程不存在");
         }
         Title title = new Title(cmd.title());
         MarkdownBody body = MarkdownBody.ofQuestion(cmd.body());

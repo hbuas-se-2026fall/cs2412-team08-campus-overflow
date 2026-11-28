@@ -50,7 +50,7 @@ public class RedisQuestionListCache implements QuestionListCache {
     @Override
     public void put(Long courseId, PageRequest page, PageResult<QuestionSummaryView> value) {
         try {
-            Duration ttl = Duration.ofSeconds(60 + ThreadLocalRandom.current().nextInt(15)); // TTL 抖动防雪崩
+            Duration ttl = Duration.ofSeconds(60L + ThreadLocalRandom.current().nextInt(15)); // TTL 抖动防雪崩
             redis.opsForValue().set(key(courseId, page), mapper.writeValueAsString(value), ttl);
         } catch (Exception e) {
             log.debug("列表缓存写入失败: {}", e.getMessage());
