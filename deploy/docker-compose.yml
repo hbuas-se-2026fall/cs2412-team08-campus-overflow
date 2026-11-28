@@ -74,7 +74,9 @@ services:
     image: prom/prometheus:v2.54.1
     container_name: co-prometheus
     profiles: ["observability"]
-    volumes: ["./prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro"
     ports: ["9090:9090"]
 
   grafana:
@@ -85,7 +87,10 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
     depends_on: [prometheus]
     ports: ["3000:3000"]
-    volumes: ["grafana-data:/var/lib/grafana"]
+    volumes:
+      - "grafana-data:/var/lib/grafana"
+      - "./grafana/provisioning:/etc/grafana/provisioning:ro"
+      - "./grafana/dashboards:/var/lib/grafana/dashboards:ro"
 
 volumes:
   mysql-data:
