@@ -50,4 +50,15 @@ class ReputationApiImplTest {
 
         assertThat(result).containsEntry(1L, 200).containsEntry(2L, 150);
     }
+
+    @Test
+    void reputations_缺失用户不补默认值() {
+        when(accounts.findAllByUserId(List.of(1L, 2L))).thenReturn(List.of(
+                ReputationAccount.reconstitute(1L, 200, 100, 0, 0)));
+
+        Map<Long, Integer> result = api.reputations(List.of(1L, 2L));
+
+        assertThat(result).containsEntry(1L, 200);
+        assertThat(result).doesNotContainKey(2L);
+    }
 }
