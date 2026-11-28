@@ -69,6 +69,27 @@
 | 系统 | SYS-400、SYS-400-VALIDATION、SYS-500 | 3 | `GlobalExceptionHandler.java` |
 | 合计 |  | 43 |  |
 
+### D-11 Sonar 配置有两个事实源，注释与 CI 命令不一致，门禁统计范围与可测范围不对齐
+
+| 字段 | 内容 |
+| --- | --- |
+| 发现时间 | 2026-11-28 |
+| 发现人 | 秦悦（复核人 wtr999-jpg） |
+| 阶段 | 静态核对 |
+| 环境 | 仅代码与文档，未部署 |
+| 严重级 | P2 |
+| 模块 | `backend/pom.xml`、`backend/sonar-project.properties`、`.github/workflows/ci.yml` |
+| 标题 | Sonar 配置存在两份事实源，注释与 CI 实际命令不一致，覆盖率门禁的统计范围与可测范围不对齐 |
+| 复现步骤 | ① 逐项对比 `backend/sonar-project.properties` 与 `backend/pom.xml` 第 41 至 52 行的 `sonar.*` 属性；② 对比 `pom.xml` 第 234 行注释与 `ci.yml` 第 78 行的实际命令；③ 本地按 CI 原命令实跑 `mvn -f backend/pom.xml sonar:sonar`，观察执行到哪些模块 |
+| 期望 | Sonar 配置只有一个事实源；注释与 CI 命令一致；覆盖率门禁的统计范围与实际可测范围对齐 |
+| 实际 | properties 中 11 项与 pom 属性同名同值，而 pom 第 40 行注释自陈「SonarScanner for Maven 不读 sonar-project.properties」，即该文件对 CI 与 Maven 扫描均无效；pom 注释写 `mvn -N sonar:sonar`，`ci.yml` 实际未带 `-N`；覆盖率门禁只统计 `SPRINT_MODULES` 所列模块，`co-bootstrap` 的 257 行不在统计范围 |
+| 影响 | 后来人按 properties 改配置会静默失效，产生「改了没生效」的排查成本；`-N` 注释曾让评审误判为子模块重复扫描；70% 门禁的分母与实际可测行数不一致，门禁长期 Failed 时会诱导为过门禁而刷测试 |
+| 证据 | properties 与 pom 的 11 项属性逐项同名同值；`ci.yml` 第 78 至 82 行命令为 `sonar:sonar -Dsonar.projectKey=campus-overflow -Dsonar.host.url -Dsonar.token -Dsonar.qualitygate.wait=true`，无 `-N`；wtr999-jpg 于 #107 评审与 #109 复核两次指出，并自行更正「重复扫描」的初判；本地实跑确认只在父工程执行一次即中断 |
+| 责任人 | 王钰滢（CI 配置单人修改） |
+| 状态 | 已确认 |
+| 关联用例 | 无（不涉及业务流程） |
+| 关闭说明 | 待关闭。收法三选一：删 properties 只留 pom 属性；或删 pom 属性只留 properties 并改用独立 scanner；或保留两份但统一措辞并在 properties 顶部注明不生效。覆盖率口径另行处理：若团队投票排除 `co-bootstrap`，同步改 `sonar.exclusions` 并写入门禁说明；若不排除，则归入补测试计划 |
+
 ## 四、跨表承接
 
 CI 集成测试问题在 Lab7 阶段已被两条记录覆盖，本表不再新开编号，避免同一缺陷多处登记、状态互相打架：
@@ -86,8 +107,8 @@ CI 集成测试问题在 Lab7 阶段已被两条记录覆盖，本表不再新�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | P1 | 0 | 0 | 0 | 0 | 1 | 0 | 1 |
-| P2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| P2 | 0 | 1 | 0 | 0 | 0 | 0 | 1 |
 | P3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 合计 | 0 | 0 | 0 | 0 | 1 | 0 | 1 |
+| 合计 | 0 | 1 | 0 | 0 | 1 | 0 | 2 |
 
 回归每轮执行后更新本表，并在 `regression-checklist.md` 的执行记录中留一行。表内数字与逐条登记不一致时以逐条登记为准。
