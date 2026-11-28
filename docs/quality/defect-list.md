@@ -14,11 +14,13 @@
 | D-05 | 集成测试在 CI 中不计入门禁 | CI / backend | `ci.yml` 的集成测试步骤带 `continue-on-error: true`，Testcontainers 失败不会拦住合并 | P1 | 待修（王钰滢 Step3） | 自查 |
 | D-06 | 覆盖率门禁阈值未启用 | CI / backend | 根 pom 的 `domain.coverage.minimum` 为 0 且未配置 `check` 执行，JaCoCo 只出报告不拦截 | P1 | 待修（王钰滢 Step3） | 自查 |
 | D-07 | `co-qa-interfaces` 与 `co-qa-infrastructure` 无单元测试 | backend / Q&A | 接口层 5 个类、基础设施层 17 个类零单测，此前仅靠端到端 IT 间接覆盖 | P2 | 部分缓解 | 自查 |
-| D-08 | CI 集成测试步骤被 `continue-on-error` 掩盖，失败原因不可见 | CI / backend | 「集成测试」步骤在 Check 注释里带 `Process completed with exit code 1`，后端 job 仍显示 succeeded，API 里该 step 结论为 success（continue-on-error 的表现）。e4973b2 的运行 run 45740544391 中该步骤耗时 28 秒；本地用同一条命令 `verify -Dsurefire.skip=true` 执行时，failsafe 能识别 `CampusOverflowFlowIT` 与 `QuestionInteractionIT`，说明 CI 该步骤不是空跑，失败发生在运行期。当前拿不到步骤日志正文（匿名 API 403、Actions 日志面板未渲染、artifact 下载被拦），失败原因未定位 | P1 | 待排查（王钰滢 Step3 收紧门禁时贴日志定位）；Step3 收紧前未修复则升 P0 | 自查 + 评审 #102 |
+| D-08 | CI 集成测试步骤被 `continue-on-error` 掩盖，失败原因不可见 | CI / backend | 「集成测试」步骤在 Check 注释里带 `Process completed with exit code 1`，后端 job 仍显示 succeeded，API 里该 step 结论为 success（continue-on-error 的表现）。e4973b2 的运行 run 45740544391 中该步骤耗时 28 秒；本地用同一条命令 `verify -Dsurefire.skip=true` 执行时，failsafe 能识别 `CampusOverflowFlowIT` 与 `QuestionInteractionIT`，说明 CI 该步骤不是空跑，失败发生在运行期。失败原因已定位，见下方 2026-11-28 补充说明 | P1 | 已定位根因（CI runner 无可用 Docker 环境），待修（CI 侧） | 自查 + 评审 #102 |
 
 D-07 的缓解说明：新增 `QuestionInteractionIT` 覆盖投票改投、评论层级、热门标签的 Controller → Service → Repository 全链路，接口层与持久化层不再是纯裸奔状态，但仓储层的分支（软删过滤、分页边界）仍需补单测。
 
-D-08 的影响说明：该步骤的失败结论目前无法核实（日志不可得），因此 Lab7 新增的 `QuestionInteractionIT` 与既有的 `CampusOverflowFlowIT` 都不能记为「已验证通过」，本地也无 Docker 可替代。收紧门禁前必须先拿到一次失败的步骤日志并定位根因，否则 Sprint 4 的集成测试结论不成立。
+D-08 的结论（2026-11-28 补充，已核实）：`#107` 在 CI 中新增测试报告归档后，首次拿到了集成测试的失败正文。run 46144790413（main，796c638）的 `backend-test-reports` 中，`failsafe-summary.xml` 为 completed=2、errors=2、failures=0、result=255；两份报告分别是 `CampusOverflowFlowIT`（0.024 秒）与 `QuestionInteractionIT`（1.063 秒），异常均为 `ContainerFetchException: Can't get Docker image: mysql:8.0.39`，底层原因为 `IllegalStateException: Could not find a valid Docker environment`。
+
+结论是：集成测试在 CI 中确实执行，失败发生在容器启动阶段，原因是 runner 上没有可用的 Docker 环境，Testcontainers 无法拉起 MySQL；测试代码本身没有被真正验证，continue-on-error 又让 job 显示 success。因此 Lab7 的这两个 IT 仍不能记为「已验证通过」。修复方向为在 CI 提供可用 Docker（可在集成测试步骤前加一步 `docker info` 诊断，或改用 services 容器并固定数据源），修复后重跑，以 `failsafe-summary` 的 errors 归零作为关闭条件。
 
 ## 二、登记模板
 
