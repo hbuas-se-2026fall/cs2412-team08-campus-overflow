@@ -21,7 +21,10 @@ import java.util.regex.Pattern;
 public class User {
 
     private static final Pattern USERNAME = Pattern.compile("^[A-Za-z0-9]{4,20}$");
-    private static final Pattern EMAIL = Pattern.compile("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$");
+    private static final Pattern EMAIL_LOCAL = Pattern.compile("^[A-Za-z0-9._+-]+$");
+    private static final Pattern EMAIL_LABEL = Pattern.compile("^[A-Za-z0-9-]+$");
+    private static final String EMAIL_ERROR_CODE = "ID-1003";
+    private static final String EMAIL_ERROR_MESSAGE = "邮箱格式不正确";
 
     private Long id;
     private final String username;
@@ -150,8 +153,25 @@ public class User {
     }
 
     private static String checkEmail(String email) {
-        if (email == null || email.length() > 100 || !EMAIL.matcher(email).matches()) {
-            throw new BusinessRuleException("ID-1003", "邮箱格式不正确");
+        if (email == null || email.length() > 100) {
+            throw new BusinessRuleException(EMAIL_ERROR_CODE, EMAIL_ERROR_MESSAGE);
+        }
+        int at = email.indexOf('@');
+        if (at < 1 || at != email.lastIndexOf('@') || at == email.length() - 1) {
+            throw new BusinessRuleException(EMAIL_ERROR_CODE, EMAIL_ERROR_MESSAGE);
+        }
+        String local = email.substring(0, at);
+        if (!EMAIL_LOCAL.matcher(local).matches()) {
+            throw new BusinessRuleException(EMAIL_ERROR_CODE, EMAIL_ERROR_MESSAGE);
+        }
+        String[] labels = email.substring(at + 1).split("\\.", -1);
+        if (labels.length < 2) {
+            throw new BusinessRuleException(EMAIL_ERROR_CODE, EMAIL_ERROR_MESSAGE);
+        }
+        for (String label : labels) {
+            if (label.isEmpty() || label.length() > 63 || !EMAIL_LABEL.matcher(label).matches()) {
+                throw new BusinessRuleException(EMAIL_ERROR_CODE, EMAIL_ERROR_MESSAGE);
+            }
         }
         return email.toLowerCase();
     }

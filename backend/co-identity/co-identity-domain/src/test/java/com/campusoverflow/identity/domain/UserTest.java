@@ -10,6 +10,8 @@ import com.campusoverflow.shared.security.Actor;
 import com.campusoverflow.shared.security.Role;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class UserTest {
 
@@ -37,6 +39,40 @@ class UserTest {
         assertThatThrownBy(() -> User.register("20230001", "小 明", "a@b.cn", "h", null, null, NOW))
                 .isInstanceOf(BusinessRuleException.class);
         assertThatThrownBy(() -> User.register("20230001", "小明", "not-an-email", "h", null, null, NOW))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("邮箱");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a@b-c.com", "a@b.c.com", "ab@c.d.e.f", "User.Name+tag@sub.campus.edu", "a_b@mail.campus.edu",
+        "a@-b.com"}) // label 首字符为连字符：RFC 不允许，但与修复前行为一致，此处作为现状基线固化
+    void acceptsWellFormedEmails(String email) {
+        User u = User.register("20230001", "小明", email, "h", null, null, NOW);
+        assertThat(u.email()).isEqualTo(email.toLowerCase());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "a@b_c.com",       // 域名字段含下划线，RFC 不允许
+        "a@b..com",        // 空 label
+        "a@b@c.com",       // 多个 @
+        "a@.b.com",        // 域名以点开头
+        "a@b.",            // 域名以点结尾
+        "@b.com",          // 缺少 local 段
+        "a b@c.com",       // local 段含空格
+        "a@b"              // 无 TLD，只有一段
+    })
+    void rejectsMalformedEmails(String email) {
+        assertThatThrownBy(() -> User.register("20230001", "小明", email, "h", null, null, NOW))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("邮箱");
+    }
+
+    @Test
+    void rejectsOverlongEmailLabelAndOverlongEmail() {
+        String longLabel = "a@" + "b".repeat(64) + ".com";
+        assertThatThrownBy(() -> User.register("20230001", "小明", longLabel, "h", null, null, NOW))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("邮箱");
+        String longLocal = "a".repeat(70) + "@" + "b".repeat(40) + ".com";
+        assertThatThrownBy(() -> User.register("20230001", "小明", longLocal, "h", null, null, NOW))
                 .isInstanceOf(BusinessRuleException.class).hasMessageContaining("邮箱");
     }
 
