@@ -1,0 +1,53 @@
+# CampusOverflow Prometheus 告警规则
+# 由 deploy/prometheus.yml 的 rule_files 加载；指标名与后端 Micrometer 埋点保持一致。
+groups:
+  - name: campus-overflow-http
+    rules:
+      # 指导书 Step5：接口 p95 延迟 > 500ms 持续 2 分钟
+      - alert: HighLatencyP95
+        expr: >
+          histogram_quantile(
+            0.95,
+            sum(rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])) by (le, uri)
+          ) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "接口 {{ $labels.uri }} p95 延迟超过 500ms"
+          description: "uri={{ $labels.uri }} method={{ $labels.method }} p95 已超过 0.5s，持续 2 分钟；请查看后端日志与对应接口慢查询。"
+
+      # 指导书 Step5：5xx 错误率 > 1% 持续 2 分钟
+      - alert: HighFivexxErrorRate
+        expr: >
+          sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+          /
+          sum(rate(http_server_requests_seconds_count[5m])) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "5xx 错误率超过 1%"
+          description: "5xx 占全部请求比例已超过 1%，持续 2 分钟；请结合 5xx 状态码分布与后端错误日志定位。"
+
+  - name: campus-overflow-domain
+    rules:
+      # 死信事件：超过最大重试次数进入死信，>0 即需人工介入
+      - alert: OutboxDeadLetters
+        expr: co_outbox_dead_letters > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "发件箱存在死信事件"
+          description: "co_outbox_dead_letters={{ $value }}，事件超过最大重试次数；请按发件箱死信流程人工处理后清零重放。"
+
+      # 声誉对账不一致：FF-8，应恒为 0
+      - alert: ReputationMismatch
+        expr: co_reputation_mismatches > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "声誉账本与账户余额对账不一致"
+          description: "co_reputation_mismatches={{ $value }}，存在对账偏差；请触发对账任务或人工校正并登记缺陷。"
