@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
+import { MarkdownPreview } from '../components/MarkdownPreview';
 
 export function AskPage() {
   const { me } = useAuth();
@@ -11,6 +12,7 @@ export function AskPage() {
   const [tags, setTags] = useState('');
   const [courseId, setCourseId] = useState<string>('');
   const [error, setError] = useState('');
+  const [tab, setTab] = useState<'edit' | 'preview'>('edit');
 
   const submit = async () => {
     try {
@@ -32,9 +34,16 @@ export function AskPage() {
       <label>标题（10–150 字，尽量具体）
         <input value={title} onChange={(e) => setTitle(e.target.value)} />
       </label>
-      <label>正文（Markdown，至少 20 字：说明你尝试过什么、卡在哪里）
+      <label>正文（Markdown，至少 20 字：说明你尝试过什么、卡在哪里）</label>
+      <div className="tabs">
+        <button className={tab === 'edit' ? 'active' : ''} onClick={() => setTab('edit')}>编辑</button>
+        <button className={tab === 'preview' ? 'active' : ''} onClick={() => setTab('preview')}>预览</button>
+      </div>
+      {tab === 'edit' ? (
         <textarea rows={12} value={body} onChange={(e) => setBody(e.target.value)} />
-      </label>
+      ) : (
+        <div className="preview-box"><MarkdownPreview text={body} emptyHint="还没有输入内容" /></div>
+      )}
       <label>标签（1–5 个，用空格或逗号分隔）
         <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="数据结构 红黑树" />
       </label>
