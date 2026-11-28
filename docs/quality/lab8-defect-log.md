@@ -76,7 +76,7 @@ CI 集成测试问题在 Lab7 阶段已被两条记录覆盖，本表不再新�
 | 编号 | 标题 | 与本表的关系 |
 | --- | --- | --- |
 | D-05 | 集成测试在 CI 中不计入门禁 | 事实源。`ci.yml` 阶段 5 带 `continue-on-error: true`，Testcontainers 失败不拦合并；由王钰滢 Step3 收紧门禁时关闭 |
-| D-08 | 集成测试失败原因不可见 | 事实源。同一步骤的失败日志不可得，后端任务仍显示 succeeded；关闭条件为拿到一次失败步骤日志并定位根因 |
+| D-08 | 集成测试失败原因不可见 | 事实源。2026-11-28 已定位到容器启动阶段：Testcontainers 报「找不到可用的 Docker 环境」，未能拉起 `mysql:8.0.39`，两个 IT 报错（failsafe-summary errors=2、result=255）；runner 为 ubuntu-latest 且自带 Docker，具体原因是 daemon 未运行、`DOCKER_HOST` 未配置还是镜像拉取失败，待 `docker info` 诊断；详见 `defect-list.md` 的 D-08 补充说明；关闭条件为 errors 归零 |
 
 核对说明：本表此前登记的 D-10 认为集成测试步骤未覆盖 co-bootstrap 模块，该判断有误。`ci.yml` 阶段 5 的命令是 `mvn verify -Dsurefire.skip=true`，未带 `-pl`，实际全模块执行；`SPRINT_MODULES` 只约束阶段 2 的单元测试与阶段 4 的覆盖率门禁。D-10 已撤销，编号不再保留，相关跟踪回到 D-05 与 D-08。
 
