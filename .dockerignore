@@ -1,0 +1,18 @@
+# 构建上下文排除项（context 为仓库根，见 deploy/docker-compose.yml 的 context: ..）
+# 目的：镜像只拿源码，不拿编译产物、依赖缓存与仓库元数据
+
+.git
+.github
+docs
+http
+postman
+
+**/target
+**/node_modules
+frontend/dist
+**/*.log
+**/*.tsbuildinfo
+
+.env
+.env.*
+!.env.example

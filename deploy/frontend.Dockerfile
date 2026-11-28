@@ -1,7 +1,10 @@
+# 多阶段构建：node 编译静态资源 → nginx 只托管产物
 FROM node:20-alpine AS build
+ARG NPM_REGISTRY=https://registry.npmmirror.com
 WORKDIR /src
-COPY frontend/package.json ./
-RUN npm install --no-audit --no-fund
+# 先装依赖（有 lockfile，用 npm ci 保证可复现），再拷源码
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --registry="${NPM_REGISTRY}" --no-audit --no-fund
 COPY frontend/ ./
 RUN npm run build
 

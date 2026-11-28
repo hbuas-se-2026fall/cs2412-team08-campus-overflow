@@ -17,7 +17,7 @@ services:
       MYSQL_DATABASE: campus_overflow
       MYSQL_USER: campus
       MYSQL_PASSWORD: ${DB_PASSWORD:-campus_dev_pwd}
-    ports: ["3306:3306"]
+    ports: ["${MYSQL_PORT:-3306}:3306"]
     volumes: ["mysql-data:/var/lib/mysql"]
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-root_dev_pwd}"]
@@ -29,7 +29,7 @@ services:
     image: redis:7-alpine
     container_name: co-redis
     command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
-    ports: ["6379:6379"]
+    ports: ["${REDIS_PORT:-6379}:6379"]
     volumes: ["redis-data:/data"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -54,7 +54,7 @@ services:
     depends_on:
       mysql: { condition: service_healthy }
       redis: { condition: service_healthy }
-    ports: ["8080:8080"]
+    ports: ["${BACKEND_PORT:-8080}:8080"]
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
@@ -67,8 +67,13 @@ services:
       dockerfile: deploy/frontend.Dockerfile
     container_name: co-web
     depends_on:
-      backend: { condition: service_started }
-    ports: ["80:80"]
+      backend: { condition: service_healthy }
+    ports: ["${WEB_PORT:-80}:80"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   prometheus:
     image: prom/prometheus:v2.54.1
