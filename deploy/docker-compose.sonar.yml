@@ -1,0 +1,18 @@
+services:
+  sonarqube:
+    image: sonarqube:10.6-community
+    container_name: co-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      # 单机评估用内置 H2；正式环境应接 PostgreSQL
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
+volumes:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
